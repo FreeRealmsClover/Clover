@@ -16,10 +16,10 @@ public static class ServiceCollectionExtensions
         {
             foreach (var assemblyType in assembly.GetTypes())
             {
-                if (assemblyType.GetCustomAttribute<PacketHandler>() is null)
+                if (assemblyType.GetCustomAttribute<PacketHandlerAttribute>() is null)
                     continue;
 
-                assemblyType.GetMethod(PacketHandler.ConfigureMethodName)?.Invoke(null, [serviceProvider]);
+                assemblyType.GetMethod(PacketHandlerAttribute.ConfigureMethodName)?.Invoke(null, [serviceProvider]);
             }
         }
     }
