@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 
 namespace Sanctuary.Database.Entities;
 
@@ -12,6 +11,7 @@ public class DbCharacter
 
     public required string FirstName { get; set; }
     public string? LastName { get; set; }
+    public string? FullName { get; set; }
 
     public int Model { get; set; }
     public required string Head { get; set; }
@@ -47,6 +47,8 @@ public class DbCharacter
     public ICollection<DbItem> Items { get; set; } = new HashSet<DbItem>();
     public ICollection<DbTitle> Titles { get; set; } = new HashSet<DbTitle>();
     public ICollection<DbMount> Mounts { get; set; } = new HashSet<DbMount>();
+    public ICollection<DbFriend> Friends { get; set; } = new HashSet<DbFriend>();
+    public ICollection<DbIgnore> Ignores { get; set; } = new HashSet<DbIgnore>();
     public ICollection<DbProfile> Profiles { get; set; } = new HashSet<DbProfile>();
 
     public ulong UserGuid { get; set; }

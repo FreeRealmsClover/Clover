@@ -51,6 +51,11 @@ public sealed class StartingZone : BaseZone
         var clientUpdatePacketDoneSendingPreloadCharacters = new ClientUpdatePacketDoneSendingPreloadCharacters();
 
         player.SendTunneled(clientUpdatePacketDoneSendingPreloadCharacters);
+
+        SendFriendList(player);
+        SendIgnoreList(player);
+
+        UpdateFriendStatus(player);
     }
 
     private void SendQuickChatData(Player player)
@@ -951,6 +956,62 @@ public sealed class StartingZone : BaseZone
         ]);
 
         player.SendTunneled(packetLoadWelcomeScreen);
+    }
+
+    private void SendFriendList(Player player)
+    {
+        var friendListPacket = new FriendListPacket();
+
+        friendListPacket.Friends = player.Friends;
+
+        player.SendTunneled(friendListPacket);
+    }
+
+    private void SendIgnoreList(Player player)
+    {
+        var ignoreListPacket = new IgnoreListPacket();
+
+        ignoreListPacket.Ignores = player.Ignores;
+
+        player.SendTunneled(ignoreListPacket);
+    }
+
+    private void UpdateFriendStatus(Player player)
+    {
+        var friendOnlinePacket = new FriendOnlinePacket();
+
+        friendOnlinePacket.Guid = player.Guid;
+
+        friendOnlinePacket.IsLocal = true;
+
+        var friendStatusPacket = new FriendStatusPacket
+        {
+            Guid = player.Guid,
+            Status =
+            {
+                ProfileId = player.ActiveProfile.Id,
+                ProfileRank = player.ActiveProfile.Rank,
+                ProfileIconId = player.ActiveProfile.Icon,
+                ProfileNameId = player.ActiveProfile.NameId,
+                ProfileBackgroundImageId = player.ActiveProfile.BadgeImageSet
+            }
+        };
+
+        foreach (var friend in player.Friends)
+        {
+            if (!_zoneManager.TryGetPlayer(friend.Guid, out var friendPlayer))
+                continue;
+
+            var otherFriendPlayer = friendPlayer.Friends.FirstOrDefault(x => x.Guid == player.Guid);
+
+            if (otherFriendPlayer is null || otherFriendPlayer.Online)
+                continue;
+
+            otherFriendPlayer.Online = true;
+
+            friendPlayer.SendTunneled(friendOnlinePacket);
+            friendPlayer.SendTunneled(friendStatusPacket);
+        }
     }
 
     #endregion

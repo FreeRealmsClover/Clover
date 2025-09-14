@@ -33,8 +33,15 @@ public static class BaseCommandPacketHandler
             CommandPacketInteractRequest.OpCode => CommandPacketInteractRequestHandler.HandlePacket(connection, reader.Span),
             CommandPacketInteractionSelect.OpCode => CommandPacketInteractionSelectHandler.HandlePacket(connection, reader.Span),
             CommandPacketSetProfile.OpCode => CommandPacketSetProfileHandler.HandlePacket(connection, reader.Span),
+            CommandPacketAddFriendRequest.OpCode => CommandPacketAddFriendRequestHandler.HandlePacket(connection, reader.Span),
+            CommandPacketRemoveFriendRequest.OpCode => CommandPacketRemoveFriendRequestHandler.HandlePacket(connection, reader.Span),
+            CommandPacketConfirmFriendResponse.OpCode => CommandPacketConfirmFriendResponseHandler.HandlePacket(connection, reader.Span),
             CommandPacketSetChatBubbleColor.OpCode => CommandPacketSetChatBubbleColorHandler.HandlePacket(connection, reader.Span),
             CommandPacketSelectPlayer.OpCode => CommandPacketSelectPlayerHandler.HandlePacket(connection, reader.Span),
+            CommandPacketFriendsPositionRequest.OpCode => CommandPacketFriendsPositionRequestHandler.HandlePacket(connection),
+            CommandPacketIgnoreRequest.OpCode => CommandPacketIgnoreRequestHandler.HandlePacket(connection, reader.Span),
+            CommandPacketChatChannelOn.OpCode => CommandPacketChatChannelOnHandler.HandlePacket(connection, reader.Span),
+            CommandPacketChatChannelOff.OpCode => CommandPacketChatChannelOffHandler.HandlePacket(connection, reader.Span),
             _ => false
         };
     }

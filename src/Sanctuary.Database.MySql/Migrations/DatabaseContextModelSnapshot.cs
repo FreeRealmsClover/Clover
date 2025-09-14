@@ -88,6 +88,12 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("varchar(16)");
 
+                    b.Property<string>("FullName")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)")
+                        .HasComputedColumnSql("CONCAT_WS(' ', `FirstName`, NULLIF(`LastName`, ''))", true);
+
                     b.Property<int>("Gender")
                         .HasColumnType("int");
 
@@ -151,6 +157,46 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.HasIndex("UserGuid");
 
                     b.ToTable("Characters");
+                });
+
+            modelBuilder.Entity("Sanctuary.Database.Entities.DbFriend", b =>
+                {
+                    b.Property<ulong>("FriendCharacterGuid")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("CharacterGuid")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("FriendCharacterGuid", "CharacterGuid");
+
+                    b.HasIndex("CharacterGuid");
+
+                    b.ToTable("Friends");
+                });
+
+            modelBuilder.Entity("Sanctuary.Database.Entities.DbIgnore", b =>
+                {
+                    b.Property<ulong>("IgnoreCharacterGuid")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<ulong>("CharacterGuid")
+                        .HasColumnType("bigint unsigned");
+
+                    b.Property<DateTimeOffset>("Created")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime(6)")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("IgnoreCharacterGuid", "CharacterGuid");
+
+                    b.HasIndex("CharacterGuid");
+
+                    b.ToTable("Ignores");
                 });
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbItem", b =>
@@ -333,6 +379,44 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Sanctuary.Database.Entities.DbFriend", b =>
+                {
+                    b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
+                        .WithMany("Friends")
+                        .HasForeignKey("CharacterGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Sanctuary.Database.Entities.DbCharacter", "FriendCharacter")
+                        .WithMany()
+                        .HasForeignKey("FriendCharacterGuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("FriendCharacter");
+                });
+
+            modelBuilder.Entity("Sanctuary.Database.Entities.DbIgnore", b =>
+                {
+                    b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
+                        .WithMany("Ignores")
+                        .HasForeignKey("CharacterGuid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Sanctuary.Database.Entities.DbCharacter", "IgnoreCharacter")
+                        .WithMany()
+                        .HasForeignKey("IgnoreCharacterGuid")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Character");
+
+                    b.Navigation("IgnoreCharacter");
+                });
+
             modelBuilder.Entity("Sanctuary.Database.Entities.DbItem", b =>
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
@@ -379,6 +463,10 @@ namespace Sanctuary.Database.MySql.Migrations
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbCharacter", b =>
                 {
+                    b.Navigation("Friends");
+
+                    b.Navigation("Ignores");
+
                     b.Navigation("Items");
 
                     b.Navigation("Mounts");

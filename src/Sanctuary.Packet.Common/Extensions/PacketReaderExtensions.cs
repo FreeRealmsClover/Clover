@@ -643,13 +643,13 @@ public static class PacketReaderExtensions
             73 => "PacketClientServerShuttingDown",
             74 => reader.Read<byte>() switch
             {
-                0 => "FriendMessagePacket",
                 1 => "FriendListPacket",
                 2 => "FriendOnlinePacket",
                 3 => "FriendOfflinePacket",
                 5 => "FriendUpdatePositionsPacket",
                 6 => "FriendAddPacket",
                 7 => "FriendRemovePacket",
+                8 => "FriendMessagePacket",
                 9 => "FriendStatusPacket",
                 10 => "FriendRenamePacket",
                 _ => "BaseFriendPacket"

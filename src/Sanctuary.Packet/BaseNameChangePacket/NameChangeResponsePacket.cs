@@ -13,7 +13,7 @@ public class NameChangeResponsePacket : BaseNameChangePacket, ISerializablePacke
 
     public NameData Name = new();
 
-    public int Result;
+    public ChangeNameResponse Result;
 
     public NameChangeResponsePacket() : base(OpCode)
     {

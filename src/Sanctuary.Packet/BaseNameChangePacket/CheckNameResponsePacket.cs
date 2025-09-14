@@ -9,7 +9,7 @@ public class CheckNameResponsePacket : BaseNameChangePacket, ISerializablePacket
 
     public NameData Name = new();
 
-    public int Result;
+    public CheckNameResponse Result;
 
     public NameChangeType Type;
 

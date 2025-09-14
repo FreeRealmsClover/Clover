@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Linq;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common.Attributes;
+using Sanctuary.Packet.Common.Chat;
 
 namespace Sanctuary.Gateway.Handlers;
 
@@ -32,9 +34,42 @@ public static class QuickChatSendChatToChannelPacketHandler
         packet.Guid = connection.Player.Guid;
         packet.Name = connection.Player.Name;
 
-        // TODO: Handle each message channel.
+        switch (packet.Channel)
+        {
+            case ChatChannel.WorldTrade:
+            case ChatChannel.WorldLfg:
+            case ChatChannel.WorldArea:
+            case ChatChannel.WorldMembersOnly:
+                {
+                    connection.Player.SendTunneled(packet);
 
-        connection.Player.SendTunneledToVisible(packet, true);
+                    foreach (var visiblePlayer in connection.Player.VisiblePlayers)
+                    {
+                        if (visiblePlayer.Value.ChatChannelStatus.TryGetValue(packet.Channel, out var channelStatus) && !channelStatus)
+                            continue;
+
+                        if (visiblePlayer.Value.Ignores.Any(x => x.Guid == connection.Player.Guid))
+                            continue;
+
+                        visiblePlayer.Value.SendTunneled(packet);
+                    }
+                }
+                break;
+
+            default:
+                {
+                    connection.Player.SendTunneled(packet);
+
+                    foreach (var visiblePlayer in connection.Player.VisiblePlayers)
+                    {
+                        if (visiblePlayer.Value.Ignores.Any(x => x.Guid == connection.Player.Guid))
+                            continue;
+
+                        visiblePlayer.Value.SendTunneled(packet);
+                    }
+                }
+                break;
+        }
 
         return true;
     }

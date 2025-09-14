@@ -28,7 +28,7 @@ public class PacketChat : BaseChatPacket, ISerializablePacket, IDeserializable<P
     public int LanguageId;
 
     /// <summary>
-    /// Only needed for <see cref="ChatChannel.Area"/>.
+    /// Only needed for <see cref="ChatChannel.WorldArea"/>.
     /// </summary>
     public int AreaNameId;
 
@@ -58,7 +58,7 @@ public class PacketChat : BaseChatPacket, ISerializablePacket, IDeserializable<P
 
         writer.Write(LanguageId);
 
-        if (Channel == ChatChannel.Area)
+        if (Channel == ChatChannel.WorldArea)
             writer.Write(AreaNameId);
 
         return writer.Buffer;
@@ -100,7 +100,7 @@ public class PacketChat : BaseChatPacket, ISerializablePacket, IDeserializable<P
         if (!reader.TryRead(out value.LanguageId))
             return false;
 
-        if (value.Channel == ChatChannel.Area)
+        if (value.Channel == ChatChannel.WorldArea)
         {
             if (!reader.TryRead(out value.AreaNameId))
                 return false;

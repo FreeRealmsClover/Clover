@@ -39,8 +39,11 @@ public static class PacketTunneledClientWorldPacketHandler
 
         var handled = opCode switch
         {
+            BaseCommandPacket.OpCode => BaseCommandPacketHandler.HandlePacket(connection, reader),
+            PacketWorldTeleportRequest.OpCode => PacketWorldTeleportRequestHandler.HandlePacket(connection, packet.Payload),
             PacketSetLocale.OpCode => PacketSetLocaleHandler.HandlePacket(connection, packet.Payload),
             BaseHousingPacket.OpCode => BaseHousingPacketHandler.HandlePacket(connection, reader),
+            BaseFotomatPacket.OpCode => BaseFotomatPacketHandler.HandlePacket(connection, reader),
             WallOfDataBasePacket.OpCode => WallOfDataBasePacketHandler.HandlePacket(connection, reader),
             _ => false
         };

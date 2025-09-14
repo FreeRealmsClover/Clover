@@ -30,6 +30,7 @@ public static class BaseQuickChatPacketHandler
 
         return opCode switch
         {
+            QuickChatSendTellPacket.OpCode => QuickChatSendTellPacketHandler.HandlePacket(connection, reader.Span),
             QuickChatSendChatToChannelPacket.OpCode => QuickChatSendChatToChannelPacketHandler.HandlePacket(connection, reader.Span),
             _ => false
         };

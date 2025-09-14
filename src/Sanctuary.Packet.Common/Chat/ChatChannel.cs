@@ -2,15 +2,15 @@
 
 public enum ChatChannel : short
 {
-    Say,
+    WorldSay,
     Tell,
     System,
     Whisper,
-    Group,
-    Shout,
-    Trade,
-    Lfg, // Looking for group
-    Area,
-    Guild,
-    Member,
+    GroupSay,
+    WorldShout,
+    WorldTrade,
+    WorldLfg, // Looking for group
+    WorldArea,
+    GuildSay,
+    WorldMembersOnly
 }

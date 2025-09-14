@@ -296,6 +296,47 @@ public class GatewayConnection : UdpConnection
         Player.ChatBubbleBackgroundColor = dbCharacter.ChatBubbleBackgroundColor;
         Player.ChatBubbleSize = dbCharacter.ChatBubbleSize;
 
+        foreach (var dbFriend in dbCharacter.Friends)
+        {
+            var friendData = new FriendData
+            {
+                Name =
+                {
+                    FirstName = dbFriend.FriendCharacter.FirstName,
+                    LastName = dbFriend.FriendCharacter.LastName ?? string.Empty
+                },
+                Guid = dbFriend.FriendCharacterGuid,
+                Unknown = dbFriend.FriendCharacterGuid,
+
+                IsLocal = true,
+                IsInStaticZone = true
+            };
+
+            if (_zoneManager.TryGetPlayer(dbFriend.FriendCharacterGuid, out var friendPlayer))
+            {
+                friendData.Online = true;
+
+                friendData.Status.ProfileId = friendPlayer.ActiveProfile.Id;
+                friendData.Status.ProfileRank = friendPlayer.ActiveProfile.Rank;
+                friendData.Status.ProfileIconId = friendPlayer.ActiveProfile.Icon;
+                friendData.Status.ProfileNameId = friendPlayer.ActiveProfile.NameId;
+                friendData.Status.ProfileBackgroundImageId = friendPlayer.ActiveProfile.BadgeImageSet;
+            }
+
+            Player.Friends.Add(friendData);
+        }
+
+        foreach (var dbIgnore in dbCharacter.Ignores)
+        {
+            var ignoreData = new IgnoreData
+            {
+                Guid = dbIgnore.IgnoreCharacterGuid,
+                Name = dbIgnore.IgnoreCharacter.FullName
+            };
+
+            Player.Ignores.Add(ignoreData);
+        }
+
         return true;
     }
 
@@ -387,6 +428,28 @@ public class GatewayConnection : UdpConnection
         packetSendSelfToClient.Payload = Player.Serialize();
 
         SendTunneled(packetSendSelfToClient);
+    }
+
+    public void SendFriendOffline()
+    {
+        var friendOfflinePacket = new FriendOfflinePacket();
+
+        friendOfflinePacket.Guid = Player.Guid;
+
+        foreach (var friend in Player.Friends)
+        {
+            if (!_zoneManager.TryGetPlayer(friend.Guid, out var friendPlayer))
+                continue;
+
+            var otherFriendPlayer = friendPlayer.Friends.FirstOrDefault(x => x.Guid == Player.Guid);
+
+            if (otherFriendPlayer is null)
+                continue;
+
+            otherFriendPlayer.Online = false;
+
+            friendPlayer.SendTunneled(friendOfflinePacket);
+        }
     }
 
     #region Packet Compression

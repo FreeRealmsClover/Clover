@@ -44,4 +44,9 @@ public class NameData
 
         return true;
     }
+
+    public override string ToString()
+    {
+        return FullName;
+    }
 }

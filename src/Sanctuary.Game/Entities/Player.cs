@@ -12,6 +12,7 @@ using Sanctuary.Game.Interactions;
 using Sanctuary.Game.Zones;
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common;
+using Sanctuary.Packet.Common.Chat;
 using Sanctuary.UdpLibrary;
 using Sanctuary.UdpLibrary.Enumerations;
 
@@ -38,6 +39,11 @@ public sealed class Player : ClientPcData, IEntity
     public ClientPcProfile ActiveProfile => Profiles.Single(x => x.Id == ActiveProfileId);
 
     public Mount? Mount { get; set; }
+
+    public List<FriendData> Friends { get; set; } = [];
+    public List<IgnoreData> Ignores { get; set; } = [];
+
+    public ConcurrentDictionary<ChatChannel, bool> ChatChannelStatus { get; set; } = [];
 
     public Vector4 StartingZonePosition { get; set; }
     public Quaternion StartingZoneRotation { get; set; }
@@ -357,6 +363,24 @@ public sealed class Player : ClientPcData, IEntity
         commandPacketInteractionList.List.Guid = Guid;
 
         commandPacketInteractionList.List.Interactions.Add(InspectInteraction.Data);
+
+        if (Friends.Any(x => x.Guid == player.Guid))
+        {
+            commandPacketInteractionList.List.Interactions.Add(RemoveFriendInteraction.Data);
+        }
+        else
+        {
+            commandPacketInteractionList.List.Interactions.Add(AddFriendInteraction.Data);
+        }
+
+        if (player.Ignores.Any(x => x.Guid == Guid))
+        {
+            commandPacketInteractionList.List.Interactions.Add(StopIgnoringInteraction.Data);
+        }
+        else
+        {
+            commandPacketInteractionList.List.Interactions.Add(IgnoreInteraction.Data);
+        }
 
         player.SendTunneled(commandPacketInteractionList);
     }

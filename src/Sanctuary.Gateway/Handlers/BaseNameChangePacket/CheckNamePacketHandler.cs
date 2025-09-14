@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 using Sanctuary.Database;
 using Sanctuary.Packet;
+using Sanctuary.Packet.Common;
 using Sanctuary.Packet.Common.Attributes;
 
 namespace Sanctuary.Gateway.Handlers;
@@ -43,7 +44,7 @@ public static class CheckNamePacketHandler
         // TODO: Check if we have the item that let's us change name.
         if (packet.Token)
         {
-            checkNameResponsePacket.Result = -8; // CheckNameResponse.FoundItem
+            checkNameResponsePacket.Result = CheckNameResponse.FoundItem;
 
             connection.SendTunneled(checkNameResponsePacket);
 
@@ -52,50 +53,50 @@ public static class CheckNamePacketHandler
 
         checkNameResponsePacket.Name = packet.Name;
 
-        // TODO: Handle other types
-        if (packet.Type != Packet.Common.NameChangeType.Character)
+        checkNameResponsePacket.Result = packet.Type switch
         {
-            checkNameResponsePacket.Result = 4; // CheckNameResponse.Invalid
-
-            connection.SendTunneled(checkNameResponsePacket);
-
-            return true;
-        }
-
-        // TODO: Implement the following checks
-        //  3 - Profane
-        //  7 - FirstNameTooShort
-        //  8 - LastNameTooShort
-        //  9 - FirstNameTooLong
-        // 10 - LastNameTooLong
-        // 11 - IllegalCharacters
-
-        if (string.IsNullOrEmpty(packet.Name.FirstName))
-        {
-            checkNameResponsePacket.Result = 5; // CheckNameResponse.IncorrectLength
-
-            connection.SendTunneled(checkNameResponsePacket);
-
-            return true;
-        }
-
-        using var dbContext = _dbContextFactory.CreateDbContext();
-
-        var taken = dbContext.Characters.Any(x => x.FirstName == packet.Name.FirstName && x.LastName == packet.Name.LastName);
-
-        if (taken)
-        {
-            checkNameResponsePacket.Result = 2; // CheckNameResponse.Taken
-
-            connection.SendTunneled(checkNameResponsePacket);
-
-            return true;
-        }
-
-        checkNameResponsePacket.Result = 1; // CheckNameResponse.Available
+            NameChangeType.Character => OnCheckCharacterName(connection, packet),
+            _ => CheckNameResponse.Invalid
+        };
 
         connection.SendTunneled(checkNameResponsePacket);
 
         return true;
+    }
+
+    private static CheckNameResponse OnCheckCharacterName(GatewayConnection connection, CheckNamePacket packet)
+    {
+        // TODO: Implement the following checks (https://archive.ph/3DB0L)
+        //  3 - Profane
+        // 11 - IllegalCharacters
+
+        if (string.IsNullOrWhiteSpace(packet.Name.FirstName)
+            || packet.Name.LastName != string.Empty && string.IsNullOrWhiteSpace(packet.Name.LastName))
+        {
+            return CheckNameResponse.IncorrectLength;
+        }
+
+        if (packet.Name.FirstName.Length < 3)
+            return CheckNameResponse.FirstNameTooShort;
+
+        if (packet.Name.FirstName.Length > 14)
+            return CheckNameResponse.FirstNameTooLong;
+
+        if (packet.Name.LastName != string.Empty)
+        {
+            if (packet.Name.LastName.Length < 3)
+                return CheckNameResponse.LastNameTooShort;
+
+            if (packet.Name.LastName.Length > 14)
+                return CheckNameResponse.LastNameTooLong;
+        }
+
+        using var dbContext = _dbContextFactory.CreateDbContext();
+        var taken = dbContext.Characters.Any(x => x.FirstName == packet.Name.FirstName && x.LastName == packet.Name.LastName);
+
+        if (taken)
+            return CheckNameResponse.Taken;
+
+        return CheckNameResponse.Available;
     }
 }

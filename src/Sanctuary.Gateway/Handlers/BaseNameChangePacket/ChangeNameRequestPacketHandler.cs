@@ -6,7 +6,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 using Sanctuary.Database;
+using Sanctuary.Game;
 using Sanctuary.Packet;
+using Sanctuary.Packet.Common;
 using Sanctuary.Packet.Common.Attributes;
 
 namespace Sanctuary.Gateway.Handlers;
@@ -15,6 +17,7 @@ namespace Sanctuary.Gateway.Handlers;
 public static class ChangeNameRequestPacketHandler
 {
     private static ILogger _logger = null!;
+    private static IZoneManager _zoneManager = null!;
     private static IDbContextFactory<DatabaseContext> _dbContextFactory = null!;
 
     public static void ConfigureServices(IServiceProvider serviceProvider)
@@ -22,6 +25,7 @@ public static class ChangeNameRequestPacketHandler
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
         _logger = loggerFactory.CreateLogger(nameof(ChangeNameRequestPacketHandler));
 
+        _zoneManager = serviceProvider.GetRequiredService<IZoneManager>();
         _dbContextFactory = serviceProvider.GetRequiredService<IDbContextFactory<DatabaseContext>>();
     }
 
@@ -35,53 +39,45 @@ public static class ChangeNameRequestPacketHandler
 
         _logger.LogTrace("Received {name} packet. ( {packet} )", nameof(ChangeNameRequestPacket), packet);
 
+        if (connection.Player.Guid != packet.Guid)
+        {
+            _logger.LogError("Invalid player guid. {guid}", packet.Guid);
+        }
+
         var nameChangeResponsePacket = new NameChangeResponsePacket();
-
-        // TODO: Handle other types
-        if (packet.Type != Packet.Common.NameChangeType.Character)
-        {
-            nameChangeResponsePacket.Result = 2; // ChangeNameResponse.Error
-
-            connection.SendTunneled(nameChangeResponsePacket);
-
-            return true;
-        }
-
-        using var dbContext = _dbContextFactory.CreateDbContext();
-
-        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == packet.Guid);
-
-        if (dbCharacter is null)
-        {
-            nameChangeResponsePacket.Result = 3; // ChangeNameResponse.Error
-
-            connection.SendTunneled(nameChangeResponsePacket);
-
-            return true;
-        }
-
-        dbCharacter.FirstName = packet.Name.FirstName;
-        dbCharacter.LastName = packet.Name.LastName;
-
-        if (dbContext.SaveChanges() <= 0)
-        {
-            nameChangeResponsePacket.Result = 4; // ChangeNameResponse.Error
-
-            connection.SendTunneled(nameChangeResponsePacket);
-
-            return true;
-        }
-
-        connection.Player.Name.FirstName = packet.Name.FirstName;
-        connection.Player.Name.LastName = packet.Name.LastName;
 
         nameChangeResponsePacket.Type = packet.Type;
         nameChangeResponsePacket.Guid = packet.Guid;
         nameChangeResponsePacket.Name = packet.Name;
 
-        nameChangeResponsePacket.Result = 1;
+        nameChangeResponsePacket.Result = packet.Type switch
+        {
+            NameChangeType.Character => OnChangeCharacterName(connection, packet),
+            _ => ChangeNameResponse.Error
+        };
 
         connection.SendTunneled(nameChangeResponsePacket);
+
+        return true;
+    }
+
+    private static ChangeNameResponse OnChangeCharacterName(GatewayConnection connection, ChangeNameRequestPacket packet)
+    {
+        using var dbContext = _dbContextFactory.CreateDbContext();
+
+        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == connection.Player.Guid);
+
+        if (dbCharacter is null)
+            return ChangeNameResponse.Error;
+
+        dbCharacter.FirstName = packet.Name.FirstName;
+        dbCharacter.LastName = packet.Name.LastName;
+
+        if (dbContext.SaveChanges() <= 0)
+            return ChangeNameResponse.Error;
+
+        connection.Player.Name.FirstName = packet.Name.FirstName;
+        connection.Player.Name.LastName = packet.Name.LastName;
 
         var playerUpdatePacketRenamePlayer = new PlayerUpdatePacketRenamePlayer();
 
@@ -90,6 +86,20 @@ public static class ChangeNameRequestPacketHandler
 
         connection.Player.SendTunneledToVisible(playerUpdatePacketRenamePlayer, true);
 
-        return true;
+        var friendRenamePacket = new FriendRenamePacket
+        {
+            Guid = connection.Player.Guid,
+            Name = connection.Player.Name.FullName
+        };
+
+        foreach (var friend in connection.Player.Friends)
+        {
+            if (!_zoneManager.TryGetPlayer(friend.Guid, out var friendPlayer))
+                continue;
+
+            friendPlayer.SendTunneled(friendRenamePacket);
+        }
+
+        return ChangeNameResponse.Pending;
     }
 }

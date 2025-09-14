@@ -16,6 +16,7 @@ public sealed class DbCharacterConfiguration : IEntityTypeConfiguration<DbCharac
 
         builder.Property(c => c.FirstName).IsRequired().HasMaxLength(16);
         builder.Property(c => c.LastName).IsRequired(false).HasMaxLength(16);
+        builder.Property(c => c.FullName).HasMaxLength(32).HasComputedColumnSql($"CONCAT_WS(' ', {nameof(DbCharacter.FirstName)}, NULLIF({nameof(DbCharacter.LastName)}, ''))", true);
 
         builder.Property(c => c.Model).IsRequired();
         builder.Property(c => c.Head).IsRequired();
@@ -64,6 +65,16 @@ public sealed class DbCharacterConfiguration : IEntityTypeConfiguration<DbCharac
         builder.HasMany(c => c.Mounts)
             .WithOne(m => m.Character)
             .HasForeignKey(m => m.CharacterGuid)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(c => c.Friends)
+            .WithOne(f => f.Character)
+            .HasForeignKey(f => f.CharacterGuid)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(c => c.Ignores)
+            .WithOne(i => i.Character)
+            .HasForeignKey(i => i.CharacterGuid)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Profiles)
