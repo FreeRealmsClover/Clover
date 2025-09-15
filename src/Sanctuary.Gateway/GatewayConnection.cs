@@ -58,12 +58,17 @@ public class GatewayConnection : UdpConnection
 
         _logger.LogInformation("{connection} disconnected. {reason}", this, reason);
 
+        // Just in case check if player is null.
+        if (Player is null)
+            return;
+
+        SendFriendOffline();
+
         _loginClient.SendCharacterLogout(Player.Guid);
 
         // TODO: Save player info to database.
 
-        // Just in case check if player is null.
-        Player?.Dispose();
+        Player.Dispose();
     }
 
     public override void OnRoutePacket(Span<byte> data)
