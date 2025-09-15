@@ -37,7 +37,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{
 		Resources\PointOfInterests.json = Resources\PointOfInterests.json
 		Resources\Profiles.json = Resources\Profiles.json
 		Resources\QuickChats.json = Resources\QuickChats.json
-		Resources\Zones.json = Resources\Zones.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CharacterCreate", "CharacterCreate", "{1EDF85EE-E890-4D81-A821-E560AD396872}"
