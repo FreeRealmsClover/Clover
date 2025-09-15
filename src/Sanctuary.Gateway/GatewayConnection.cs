@@ -66,7 +66,7 @@ public class GatewayConnection : UdpConnection
 
         _loginClient.SendCharacterLogout(Player.Guid);
 
-        // TODO: Save player info to database.
+        SavePlayerToDatabase();
 
         Player.Dispose();
     }
@@ -345,28 +345,53 @@ public class GatewayConnection : UdpConnection
         return true;
     }
 
-    private bool SavePlayerToDatabase()
+    private void SavePlayerToDatabase()
     {
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var dbCharacter = dbContext.Characters
-            .Include(x => x.Items)
-            .Include(x => x.Titles)
-            .Include(x => x.Mounts)
-            .Include(x => x.Profiles)
-                .ThenInclude(x => x.Items)
-            .AsSplitQuery()
-            .SingleOrDefault(x => x.Guid == Player.Guid);
+        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == Player.Guid);
 
         if (dbCharacter is null)
         {
             _logger.LogError("Failed to get character data from database.");
-            return false;
+            return;
         }
 
-        // TODO
+        // Start - ClientPcData
 
-        return true;
+        Vector4 position;
+        Quaternion rotation;
+
+        if (Player.Zone == _zoneManager.StartingZone)
+        {
+            position = Player.Position;
+            rotation = Player.Rotation;
+        }
+        else
+        {
+            position = Player.StartingZonePosition;
+            rotation = Player.StartingZoneRotation;
+        }
+
+        dbCharacter.PositionX = float.IsNaN(position.X) ? null : position.X;
+        dbCharacter.PositionY = float.IsNaN(position.Y) ? null : position.Y;
+        dbCharacter.PositionZ = float.IsNaN(position.Z) ? null : position.Z;
+
+        dbCharacter.RotationX = float.IsNaN(rotation.X) ? null : rotation.X;
+        dbCharacter.RotationZ = float.IsNaN(rotation.Z) ? null : rotation.Z;
+
+        dbCharacter.ActiveProfileId = Player.ActiveProfileId;
+
+        dbCharacter.ActiveTitleId = Player.ActiveTitle;
+
+        // End ClientPcData
+
+        dbCharacter.ChatBubbleForegroundColor = Player.ChatBubbleForegroundColor;
+        dbCharacter.ChatBubbleBackgroundColor = Player.ChatBubbleBackgroundColor;
+        dbCharacter.ChatBubbleSize = Player.ChatBubbleSize;
+
+        if (dbContext.SaveChanges() <= 0)
+            _logger.LogError("Failed to save character data to database");
     }
 
     public void SendInitializationParameters()
