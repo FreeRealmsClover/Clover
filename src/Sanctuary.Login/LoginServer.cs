@@ -42,7 +42,7 @@ public class LoginServer : UdpManager<LoginConnection>
         // 4 - Online Players
         Span<byte> buf = stackalloc byte[20];
 
-        buf[0] = 1;
+        buf[0] = Convert.ToByte(_gatewayServer.Gateways.Any());
         buf[1] = Convert.ToByte(_options.IsLocked);
 
         var onlinePlayers = _gatewayServer.Gateways.Sum(x => x.OnlineCharacters.Count);
