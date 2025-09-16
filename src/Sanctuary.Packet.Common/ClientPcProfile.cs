@@ -17,7 +17,7 @@ public class ClientPcProfile : ISerializableType
     public bool MembersOnly;
     public int IsCombat;
 
-    public Dictionary<int, ProfileItemClassData> ItemClassData = new();
+    public Dictionary<int, ProfileItemClassData> ItemClasses = new();
 
     public bool Unknown11;
     public int Unknown12;
@@ -64,7 +64,7 @@ public class ClientPcProfile : ISerializableType
         writer.Write(MembersOnly);
         writer.Write(IsCombat);
 
-        writer.Write(ItemClassData);
+        writer.Write(ItemClasses);
 
         writer.Write(Unknown11);
         writer.Write(Unknown12);

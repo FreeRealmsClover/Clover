@@ -12,9 +12,9 @@
     "Hint": 0,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "1": {
         "Class": 1,
         "Unknown": 3
@@ -139,9 +139,9 @@
     "Hint": 384179,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "2": {
         "Class": 2,
         "Unknown": 5
@@ -261,9 +261,9 @@
     "Hint": 384184,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "3": {
         "Class": 3,
         "Unknown": 5
@@ -370,9 +370,9 @@
     "Hint": 384185,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "7": {
         "Class": 7,
         "Unknown": 5
@@ -488,9 +488,9 @@
     "Hint": 384188,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "8": {
         "Class": 8,
         "Unknown": 5
@@ -599,9 +599,9 @@
     "Hint": 384190,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "12": {
         "Class": 12,
         "Unknown": 5
@@ -712,9 +712,9 @@
     "Hint": 384189,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "14": {
         "Class": 14,
         "Unknown": 5
@@ -826,9 +826,9 @@
     "Hint": 384191,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "15": {
         "Class": 15,
         "Unknown": 5
@@ -941,9 +941,9 @@
     "Hint": 384193,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "16": {
         "Class": 16,
         "Unknown": 5
@@ -1052,9 +1052,9 @@
     "Hint": 384195,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "5": {
         "Class": 5,
         "Unknown": 5
@@ -1179,9 +1179,9 @@
     "Hint": 384200,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "21": {
         "Class": 21,
         "Unknown": 5
@@ -1291,9 +1291,9 @@
     "Hint": 384196,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "24": {
         "Class": 24,
         "Unknown": 5
@@ -1379,9 +1379,9 @@
     "Hint": 384201,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "22": {
         "Class": 22,
         "Unknown": 5
@@ -1467,9 +1467,9 @@
     "Hint": 416471,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "69": {
         "Class": 69,
         "Unknown": 1
@@ -1568,9 +1568,9 @@
     "Hint": 384207,
     "MembersOnly": false,
     "Trial": false,
-    "Unknown12": 0,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 0,
+    "Unknown2": 0,
+    "ItemClasses": {
       "1": {
         "Class": 1,
         "Unknown": 3
@@ -1687,9 +1687,9 @@
     "Hint": 418996,
     "MembersOnly": false,
     "Trial": true,
-    "Unknown12": 4,
-    "Unknown13": 0,
-    "ProfileItemClasses": {
+    "Unknown": 4,
+    "Unknown2": 0,
+    "ItemClasses": {
       "69": {
         "Class": 69,
         "Unknown": 1

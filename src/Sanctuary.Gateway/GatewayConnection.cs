@@ -187,22 +187,24 @@ public class GatewayConnection : UdpConnection
             clientPcProfile.NameId = profileData.NameId;
             clientPcProfile.DescriptionId = profileData.DescriptionId;
 
+            clientPcProfile.Type = profileData.Type;
             clientPcProfile.Icon = profileData.Icon;
+
+            clientPcProfile.AbilityBgImageSet = profileData.AbilityBgImageSet;
+            clientPcProfile.BadgeImageSet = profileData.BadgeImageSet;
+            clientPcProfile.ButtonImageSet = profileData.ButtonImageSet;
+
+            clientPcProfile.MembersOnly = profileData.MembersOnly;
+
+            clientPcProfile.ItemClasses = profileData.ItemClasses;
+
+            clientPcProfile.Rank = dbProfile.Level;
+            clientPcProfile.RankPercent = dbProfile.LevelXP;
 
             foreach (var dbItem in dbProfile.Items)
             {
                 if (!_resourceManager.ClientItemDefinitions.TryGetValue(dbItem.Definition, out var clientItemDefinition))
                     continue;
-
-                if (!clientPcProfile.ItemClassData.ContainsKey(clientItemDefinition.Class))
-                {
-                    var profileItemClassData = new ProfileItemClassData
-                    {
-                        Id = clientItemDefinition.Class
-                    };
-
-                    clientPcProfile.ItemClassData.Add(clientItemDefinition.Class, profileItemClassData);
-                }
 
                 if (clientPcProfile.Items.TryGetValue(clientItemDefinition.Slot, out var profileItem))
                     profileItem.Id = dbItem.Id;
@@ -217,11 +219,6 @@ public class GatewayConnection : UdpConnection
                     clientPcProfile.Items.Add(clientItemDefinition.Slot, profileItem);
                 }
             }
-
-            clientPcProfile.BadgeImageSet = profileData.BadgeImageSet;
-            clientPcProfile.ButtonImageSet = profileData.ButtonImageSet;
-            clientPcProfile.Rank = dbProfile.Level;
-            clientPcProfile.RankPercent = dbProfile.LevelXP;
 
             Player.Profiles.Add(clientPcProfile);
 
