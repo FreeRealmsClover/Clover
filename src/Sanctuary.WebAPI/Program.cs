@@ -77,7 +77,11 @@ builder.Logging.AddNLog();
 
 var app = builder.Build();
 
+#if DEBUG
+
 app.UseHttpLogging();
+
+#endif
 
 // Configure the HTTP request pipeline.
 
