@@ -96,7 +96,7 @@ builder.ConfigureServices((hostBuilderContext, serviceCollection) =>
     serviceCollection.AddSingleton<IResourceManager, ResourceManager>();
 });
 
-builder.ConfigureLogging(loggingBuilder =>
+builder.ConfigureLogging((hostBuilderContext, loggingBuilder) =>
 {
     loggingBuilder.ClearProviders();
 
@@ -104,7 +104,11 @@ builder.ConfigureLogging(loggingBuilder =>
     loggingBuilder.SetMinimumLevel(LogLevel.Debug);
 #endif
 
-    loggingBuilder.AddNLog();
+    var nlogConfigFile = hostBuilderContext.HostingEnvironment.IsDevelopment()
+        ? "NLog.Development.config"
+        : "NLog.config";
+
+    loggingBuilder.AddNLog(nlogConfigFile);
 });
 
 var host = builder.Build();

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 using NLog.Extensions.Logging;
@@ -73,7 +74,11 @@ builder.Services.AddHttpLogging(logging =>
 
 #endif
 
-builder.Logging.AddNLog();
+var nlogConfigFile = builder.Environment.IsDevelopment()
+    ? "NLog.Development.config"
+    : "NLog.config";
+
+builder.Logging.AddNLog(nlogConfigFile);
 
 var app = builder.Build();
 
