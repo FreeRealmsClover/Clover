@@ -2,16 +2,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-using BitArmory.ReCaptcha;
-using BitArmory.Turnstile;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+
+using MiniValidation;
 
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
@@ -26,26 +24,14 @@ public static class AuthEndpoints
 {
     private static ILogger _logger = null!;
 
-    private static CaptchaOptions? _captchaOptions;
-    private static TurnstileService? _turnstileService;
-    private static ReCaptchaService? _reCaptchaService;
-
     public static void MapAuthEndpoints(this WebApplication app)
     {
         var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
 
         _logger = loggerFactory.CreateLogger(nameof(AuthEndpoints));
 
-        _turnstileService = app.Services.GetService<TurnstileService>();
-        _reCaptchaService = app.Services.GetService<ReCaptchaService>();
-
-        var captchaOptions = app.Services.GetService<IOptions<CaptchaOptions>>();
-
-        if (captchaOptions is { Value.IsConfigured: true })
-            _captchaOptions = captchaOptions.Value;
-
         app.MapPost("/login", LoginHandlerAsync);
-        app.MapPost("/register", RegisterHandlerAsync).DisableAntiforgery();
+        app.MapPost("/register", RegisterHandlerAsync);
     }
 
     private static async Task<IResult> LoginHandlerAsync(
@@ -54,6 +40,9 @@ public static class AuthEndpoints
         CancellationToken cancellationToken,
         IOptionsSnapshot<WebAPIOptions> webAPIOptions)
     {
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
+
         var dbUser = await databaseContext.Users.FirstOrDefaultAsync(x => x.Username == request.Username, cancellationToken);
 
         if (dbUser is null)
@@ -88,36 +77,28 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> RegisterHandlerAsync(
-        HttpContext context,
-        [FromForm] string username,
-        [FromForm] string password,
+        RegisterRequestModel request,
         DatabaseContext databaseContext,
         CancellationToken cancellationToken)
     {
-        var captchaResult = await VerifyCaptchaAsync(context, cancellationToken);
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
 
-        if (captchaResult is not null)
-            return captchaResult;
-
-        var usernameTaken = await databaseContext.Users.AnyAsync(x => x.Username == username, cancellationToken);
+        var usernameTaken = await databaseContext.Users.AnyAsync(x => x.Username == request.Username, cancellationToken);
 
         if (usernameTaken)
         {
-            _logger.LogWarning("Registration failed, username already taken {Username}", username);
+            _logger.LogWarning("Registration failed, username already taken {Username}", request.Username);
 
-            return Results.Ok(new
-            {
-                Success = false,
-                ErrorCode = 1
-            });
+            return Results.Conflict();
         }
 
         var salt = BC.GenerateSalt();
-        var hashedPassword = BC.HashPassword(password, salt);
+        var hashedPassword = BC.HashPassword(request.Password, salt);
 
         var dbUser = new DbUser
         {
-            Username = username,
+            Username = request.Username,
             Password = hashedPassword
         };
 
@@ -125,62 +106,11 @@ public static class AuthEndpoints
 
         if (await databaseContext.SaveChangesAsync(cancellationToken) <= 0)
         {
-            _logger.LogError("Failed to save new username: {Username}", username);
+            _logger.LogError("Failed to add new user: {Username}", request.Username);
 
             return Results.InternalServerError();
         }
 
-        return Results.Ok(new
-        {
-            Success = true
-        });
-    }
-
-    private static async Task<IResult?> VerifyCaptchaAsync(HttpContext context, CancellationToken cancellationToken)
-    {
-        if (_captchaOptions is null || !_captchaOptions.IsConfigured)
-            return null;
-
-        var remoteIp = context.Connection.RemoteIpAddress?.ToString();
-
-        switch (_captchaOptions.Provider)
-        {
-            case CaptchaProvider.Turnstile:
-                {
-                    if (_turnstileService is null)
-                        return Results.InternalServerError();
-
-                    if (!context.Request.Form.TryGetValue("cf-turnstile-response", out var turnstileToken))
-                        return Results.Unauthorized();
-
-                    var turnstileResult = await _turnstileService.VerifyAsync(
-                        turnstileToken, _captchaOptions.Secret, remoteIp, null, cancellationToken);
-
-                    if (!turnstileResult.IsSuccess)
-                        return Results.Unauthorized();
-                }
-                break;
-
-            case CaptchaProvider.ReCaptcha:
-                {
-                    if (_reCaptchaService is null)
-                        return Results.InternalServerError();
-
-                    if (!context.Request.Form.TryGetValue("recaptcha_token", out var recaptchaToken))
-                        return Results.Unauthorized();
-
-                    var recaptchaResult = await _reCaptchaService.Verify3Async(
-                        recaptchaToken, _captchaOptions.Secret, remoteIp, cancellationToken);
-
-                    if (!recaptchaResult.IsSuccess)
-                        return Results.Unauthorized();
-                }
-                break;
-
-            default:
-                throw new NotImplementedException($"Captcha provider not implemented: {_captchaOptions.Provider}");
-        }
-
-        return null;
+        return Results.Ok();
     }
 }

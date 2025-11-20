@@ -5,8 +5,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="BCrypt.Net-Next" Version="4.0.3" />
-    <PackageVersion Include="BitArmory.ReCaptcha" Version="5.0.1" />
-    <PackageVersion Include="BitArmory.Turnstile" Version="1.0.1" />
     <PackageVersion Include="Collections.Pooled" Version="2.0.0-preview.27" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Certificate" Version="9.0.7" />
@@ -23,6 +21,7 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.9" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <PackageVersion Include="MiniValidation" Version="0.9.2" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.10.4" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.10.4" />
     <PackageVersion Include="NLog" Version="6.0.4" />

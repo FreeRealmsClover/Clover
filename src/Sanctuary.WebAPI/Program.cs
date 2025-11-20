@@ -1,12 +1,6 @@
-using System;
-
-using BitArmory.ReCaptcha;
-using BitArmory.Turnstile;
-
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -22,6 +16,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseUrls();
 
+// Proxy Server / Load Balancer
+var forwardedHeaderSection = builder.Configuration.GetSection("ForwardedHeadersOptions");
+
+if (forwardedHeaderSection is not null)
+    builder.Services.Configure<ForwardedHeadersOptions>(forwardedHeaderSection);
+
 // Options
 builder.Services.AddOptionsWithValidateOnStart<DatabaseOptions>()
     .BindConfiguration(DatabaseOptions.Section);
@@ -32,35 +32,7 @@ builder.Services.AddOptionsWithValidateOnStart<WebAPIOptions>()
 // Database
 builder.Services.AddDatabase(builder.Configuration);
 
-// CAPTCHA
-var captchaOptionsSection = builder.Configuration.GetSection(CaptchaOptions.Section);
-
-if (captchaOptionsSection.Exists())
-{
-    var captchaOptions = captchaOptionsSection.Get<CaptchaOptions>();
-
-    ArgumentNullException.ThrowIfNull(captchaOptions);
-
-    if (!captchaOptions.IsConfigured)
-        throw new InvalidOperationException("Invalid captcha options.");
-
-    switch (captchaOptions.Provider)
-    {
-        case CaptchaProvider.Turnstile:
-            builder.Services.AddSingleton<TurnstileService>();
-            break;
-
-        case CaptchaProvider.ReCaptcha:
-            builder.Services.AddSingleton<ReCaptchaService>();
-            break;
-
-        default:
-            throw new NotImplementedException($"Captcha provider not implemented. {captchaOptions.Provider}");
-    }
-
-    builder.Services.Configure<CaptchaOptions>(captchaOptionsSection);
-}
-
+// Logging
 builder.Logging.ClearProviders();
 
 #if DEBUG

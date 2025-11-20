@@ -10,10 +10,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="MiniValidation" />
 
-    <PackageReference Include="BitArmory.ReCaptcha" />
-    <PackageReference Include="BitArmory.Turnstile" />
+    <PackageReference Include="BCrypt.Net-Next" />
 
     <PackageReference Include="SixLabors.ImageSharp" />
 

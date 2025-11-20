@@ -56,8 +56,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanctuary.Database.MySql", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sanctuary.Database.Entities", "Sanctuary.Database.Entities\Sanctuary.Database.Entities.csproj", "{CE30F51D-3A2C-4521-BC7B-9E455B5EC119}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{14839F05-845D-49D6-8624-68FC28255652}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sanctuary.WebAPI", "Sanctuary.WebAPI\Sanctuary.WebAPI.csproj", "{F6DFDD67-A43B-AD9D-47CE-D30F244A04AF}"
 EndProject
 Global
