@@ -5,7 +5,7 @@ namespace Sanctuary.Database.Entities;
 
 public sealed class DbUser
 {
-    public ulong Guid { get; set; }
+    public ulong Id { get; set; }
 
     public required string Username { get; set; }
     public required string Password { get; set; }
@@ -22,5 +22,5 @@ public sealed class DbUser
     public DateTimeOffset Created { get; set; }
     public DateTimeOffset? LastLogin { get; set; }
 
-    public ICollection<DbCharacter> Characters { get; set; } = new HashSet<DbCharacter>();
+    public ICollection<DbCharacter> Characters { get; set; } = [];
 }

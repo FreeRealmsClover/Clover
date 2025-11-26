@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game.Entities;
 using Sanctuary.Packet;
@@ -35,10 +36,10 @@ public class RemoveFriendInteraction : IInteraction
         using var dbContext = _dbContextFactory.CreateDbContext();
 
         var dbFriendsToRemove = dbContext.Friends
-            .Where(x => (x.CharacterGuid == otherPlayer.Guid &&
-                        x.FriendCharacterGuid == player.Guid) ||
-                        (x.FriendCharacterGuid == otherPlayer.Guid &&
-                        x.CharacterGuid == player.Guid));
+            .Where(x => (x.CharacterId == GuidHelper.GetPlayerId(otherPlayer.Guid) &&
+                        x.FriendCharacterId == GuidHelper.GetPlayerId(player.Guid)) ||
+                        (x.FriendCharacterId == GuidHelper.GetPlayerId(otherPlayer.Guid) &&
+                        x.CharacterId == GuidHelper.GetPlayerId(player.Guid)));
 
         if (dbFriendsToRemove.ExecuteDelete() <= 0)
             return;

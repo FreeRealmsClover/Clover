@@ -9,8 +9,8 @@ public sealed class DbCharacterConfiguration : IEntityTypeConfiguration<DbCharac
 {
     public void Configure(EntityTypeBuilder<DbCharacter> builder)
     {
-        builder.HasKey(c => c.Guid);
-        builder.Property(c => c.Guid).IsRequired().ValueGeneratedOnAdd();
+        builder.HasKey(c => c.Id);
+        builder.Property(c => c.Id).IsRequired().ValueGeneratedOnAdd();
 
         builder.Property(c => c.Ticket).IsRequired(false);
 
@@ -19,13 +19,22 @@ public sealed class DbCharacterConfiguration : IEntityTypeConfiguration<DbCharac
         builder.Property(c => c.FullName).HasMaxLength(32).HasComputedColumnSql($"CONCAT_WS(' ', {nameof(DbCharacter.FirstName)}, NULLIF({nameof(DbCharacter.LastName)}, ''))", true);
 
         builder.Property(c => c.Model).IsRequired();
+
         builder.Property(c => c.Head).IsRequired();
+        builder.Property(c => c.HeadId).IsRequired();
+
         builder.Property(c => c.Hair).IsRequired();
+        builder.Property(c => c.HairId).IsRequired();
 
         builder.Property(c => c.ModelCustomization).IsRequired(false);
+        builder.Property(c => c.ModelCustomizationId).IsRequired(false);
+
         builder.Property(c => c.FacePaint).IsRequired(false);
+        builder.Property(c => c.FacePaintId).IsRequired(false);
 
         builder.Property(c => c.SkinTone).IsRequired();
+        builder.Property(c => c.SkinToneId).IsRequired();
+
         builder.Property(c => c.EyeColor).IsRequired();
         builder.Property(c => c.HairColor).IsRequired();
 
@@ -49,37 +58,40 @@ public sealed class DbCharacterConfiguration : IEntityTypeConfiguration<DbCharac
         builder.Property(c => c.ChatBubbleBackgroundColor).IsRequired().HasDefaultValue(0xD4E2F0);
         builder.Property(c => c.ChatBubbleSize).IsRequired().HasDefaultValue(1);
 
+        builder.Property(c => c.Coins).IsRequired();
+        builder.Property(c => c.StationCash).IsRequired();
+
         builder.Property(c => c.Created).IsRequired().HasDefaultValueSql("DATE()");
         builder.Property(c => c.LastLogin).IsRequired(false);
 
         builder.HasMany(c => c.Items)
             .WithOne(i => i.Character)
-            .HasForeignKey(i => i.CharacterGuid)
+            .HasForeignKey(i => i.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Titles)
             .WithOne(t => t.Character)
-            .HasForeignKey(t => t.CharacterGuid)
+            .HasForeignKey(t => t.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Mounts)
             .WithOne(m => m.Character)
-            .HasForeignKey(m => m.CharacterGuid)
+            .HasForeignKey(m => m.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Friends)
             .WithOne(f => f.Character)
-            .HasForeignKey(f => f.CharacterGuid)
+            .HasForeignKey(f => f.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Ignores)
             .WithOne(i => i.Character)
-            .HasForeignKey(i => i.CharacterGuid)
+            .HasForeignKey(i => i.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(c => c.Profiles)
             .WithOne(p => p.Character)
-            .HasForeignKey(p => p.CharacterGuid)
+            .HasForeignKey(p => p.CharacterId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Sanctuary.Core.Configuration;
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Packet;
@@ -72,6 +73,9 @@ public static class PacketLoginHandler
             return true;
         }
 
+        // Use ticket as key.
+        connection.InitializeCipher(packet.Ticket);
+
         using var dbContext = _dbContextFactory.CreateDbContext();
 
         var character = dbContext.Characters
@@ -86,7 +90,7 @@ public static class PacketLoginHandler
             .Include(x => x.Profiles)
                 .ThenInclude(x => x.Items)
             .AsSplitQuery()
-            .SingleOrDefault(x => x.Guid == packet.Guid && x.Ticket == ticket);
+            .SingleOrDefault(x => x.Id == GuidHelper.GetPlayerId(packet.Guid) && x.Ticket == ticket);
 
         if (character is null)
         {
@@ -101,7 +105,7 @@ public static class PacketLoginHandler
 
 #if !DEBUG
         var result = dbContext.Characters
-            .Where(x => x.Guid == character.Guid)
+            .Where(x => x.Id == character.Id)
             .ExecuteUpdate(x => x.SetProperty(x => x.Ticket, (Guid?)null));
 
         if (result <= 0)
@@ -123,7 +127,7 @@ public static class PacketLoginHandler
             return true;
         }
 
-        _loginClient.SendCharacterLogin(character.Guid);
+        _loginClient.SendCharacterLogin(character.Id);
 
         packetLoginReply.Success = true;
 

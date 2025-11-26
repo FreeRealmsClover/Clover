@@ -2,14 +2,6 @@
 
 public sealed class LoginServerOptions : ServerOptions
 {
-    /// <summary>
-    /// Key used in encrypting/decrypting packets for the Login Server.
-    /// </summary>
-    /// <value>
-    /// Encoded in Base64, Hardcoded in the Client after initializing <c>Login::ExternalLoginUdpApi</c>.
-    /// </value>
-    public required string CryptKey { get; set; }
-
     public required int LoginGatewayPort { get; set; }
     public required string LoginGatewayChallenge { get; set; }
 
@@ -21,8 +13,9 @@ public sealed class LoginServerOptions : ServerOptions
     public int DefaultTitleId { get; set; }
     public required int DefaultProfileId { get; set; }
 
-    public bool UnlockAllItems { get; set; }
+    public int StartingCoins { get; set; }
+    public int StartingStationCash { get; set; }
+
     public bool UnlockAllTitles { get; set; }
-    public bool UnlockAllMounts { get; set; }
     public bool UnlockAllProfiles { get; set; }
 }

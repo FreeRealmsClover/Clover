@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Packet;
@@ -57,22 +58,24 @@ public static class CommandPacketRemoveFriendRequestHandler
         if (dbCharacterToRemove is null)
             return;
 
-        var dbFriendsToRemove = dbContext.Friends.Where(x => (x.CharacterGuid == dbCharacterToRemove.Guid &&
-                                                              x.FriendCharacterGuid == connection.Player.Guid) ||
-                                                             (x.FriendCharacterGuid == dbCharacterToRemove.Guid &&
-                                                             x.CharacterGuid == connection.Player.Guid));
+        var dbFriendsToRemove = dbContext.Friends.Where(x => (x.CharacterId == dbCharacterToRemove.Id &&
+                                                              x.FriendCharacterId == GuidHelper.GetPlayerId(connection.Player.Guid)) ||
+                                                             (x.FriendCharacterId == dbCharacterToRemove.Id &&
+                                                             x.CharacterId == GuidHelper.GetPlayerId(connection.Player.Guid)));
 
         if (dbFriendsToRemove.ExecuteDelete() <= 0)
             return;
 
-        connection.Player.Friends.RemoveAll(x => x.Guid == dbCharacterToRemove.Guid);
+        var dbCharacterToRemoveGuid = GuidHelper.GetPlayerGuid(dbCharacterToRemove.Id);
+
+        connection.Player.Friends.RemoveAll(x => x.Guid == dbCharacterToRemoveGuid);
 
         connection.Player.SendTunneled(new FriendRemovePacket
         {
-            Guid = dbCharacterToRemove.Guid
+            Guid = GuidHelper.GetPlayerGuid(dbCharacterToRemoveGuid)
         });
 
-        if (_zoneManager.TryGetPlayer(dbCharacterToRemove.Guid, out var player))
+        if (_zoneManager.TryGetPlayer(dbCharacterToRemoveGuid, out var player))
         {
             player.Friends.RemoveAll(x => x.Guid == connection.Player.Guid);
 

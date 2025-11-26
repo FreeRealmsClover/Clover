@@ -12,4 +12,15 @@ public class ItemRecord : ISerializableType
         writer.Write(Definition);
         writer.Write(Tint);
     }
+
+    public bool TryRead(ref PacketReader reader)
+    {
+        if (!reader.TryRead(out Definition))
+            return false;
+
+        if (!reader.TryRead(out Tint))
+            return false;
+
+        return true;
+    }
 }

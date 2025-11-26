@@ -5,15 +5,19 @@ namespace Sanctuary.Packet.Common;
 public class PlayerCustomizationData : ISerializableType
 {
     public int Id;
-    public string? Unknown2;
-    public int Unknown3;
-    public int Unknown4;
+
+    public string? StringParam;
+    public int Param;
+
+    public int ItemId;
 
     public void Serialize(PacketWriter writer)
     {
         writer.Write(Id);
-        writer.Write(Unknown2);
-        writer.Write(Unknown3);
-        writer.Write(Unknown4);
+
+        writer.Write(StringParam);
+        writer.Write(Param);
+
+        writer.Write(ItemId);
     }
 }

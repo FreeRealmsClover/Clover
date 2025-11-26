@@ -29,10 +29,14 @@ public class QuickChatDefinitionCollection : ObservableConcurrentDictionary<int,
 
         try
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var streamReader = new StreamReader(fileStream);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            var list = JsonSerializer.Deserialize<List<QuickChatDefinition>>(streamReader.ReadToEnd());
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var list = JsonSerializer.Deserialize<List<QuickChatDefinition>>(fileStream, jsonSerializerOptions);
 
             if (list is null)
             {

@@ -8,16 +8,16 @@ public class MountDefinition
 
     public int ImageSetId { get; set; }
 
-    public int TintId { get; set; }
+    public string TextureAlias { get; set; } = null!;
     public string TintAlias { get; set; } = null!;
+
+    public int TintId { get; set; }
 
     public bool MembersOnly { get; set; }
 
     public bool IsUpgradable { get; set; }
-    public bool IsUpgraded { get; set; }
 
     public int ModelId { get; set; }
-    public int ItemDefinitionId { get; set; }
 
     public float NameVerticalOffset { get; set; }
 

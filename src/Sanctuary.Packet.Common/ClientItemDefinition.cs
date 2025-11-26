@@ -41,4 +41,18 @@ public class ClientItemDefinition : BaseItemDefinition
 
         writer.Write(Abilities);
     }
+
+    public int GetMemberPurchasePrice()
+    {
+        if (Cost > 0 && (MemberDiscount - 1) <= 99)
+        {
+            var discountFactor = MemberDiscount * 0.01f;
+            var discountMultiplier = 1.0f - discountFactor;
+            var discountedCost = discountMultiplier * Cost;
+
+            return (int)discountedCost;
+        }
+
+        return Cost;
+    }
 }

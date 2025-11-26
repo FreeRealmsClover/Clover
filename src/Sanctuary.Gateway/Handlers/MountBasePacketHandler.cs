@@ -32,6 +32,7 @@ public static class MountBasePacketHandler
         {
             PacketDismountRequest.OpCode => PacketDismountRequestHandler.HandlePacket(connection),
             PacketMountSpawn.OpCode => PacketMountSpawnHandler.HandlePacket(connection, reader.Span),
+            PacketMountSpawnByItemDefinitionId.OpCode => PacketMountSpawnByItemDefinitionIdHandler.HandlePacket(connection, reader.Span),
             _ => false
         };
     }

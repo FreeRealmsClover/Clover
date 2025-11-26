@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Sanctuary.Core.Configuration;
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common;
@@ -54,7 +55,7 @@ public static class CharacterLoginRequestHandler
             return true;
         }
 
-        if (connection.Guid == 0)
+        if (connection.UserId == 0)
         {
             characterLoginReply.Status = 6;
 
@@ -65,7 +66,7 @@ public static class CharacterLoginRequestHandler
 
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var character = dbContext.Characters.SingleOrDefault(x => x.UserGuid == connection.Guid && x.Guid == packet.EntityKey);
+        var character = dbContext.Characters.SingleOrDefault(x => x.UserId == connection.UserId && x.Id == GuidHelper.GetPlayerId(packet.EntityKey));
 
         if (character is null)
         {
@@ -102,7 +103,7 @@ public static class CharacterLoginRequestHandler
         }
 
         // Character is already logged in.
-        if (gatewayServer.OnlineCharacters.Contains(character.Guid))
+        if (gatewayServer.OnlineCharacters.Contains(character.Id))
         {
             characterLoginReply.Status = 8;
 
@@ -113,11 +114,14 @@ public static class CharacterLoginRequestHandler
 
         characterLoginReply.Status = 1;
 
+        var serverTicket = ticket.ToString("N");
+
         var clientCharacterData = new ClientCharacterData
         {
             ServerAddress = gatewayServer.ServerAddress,
-            ServerTicket = ticket.ToString(),
-            Guid = character.Guid
+            ServerTicket = serverTicket,
+            CryptoKey = serverTicket, // Use ticket as key.
+            Guid = GuidHelper.GetPlayerGuid(character.Id)
         };
 
         characterLoginReply.Payload = clientCharacterData.Serialize();

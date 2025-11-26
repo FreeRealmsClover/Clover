@@ -9,13 +9,13 @@ public sealed class DbFriendConfiguration : IEntityTypeConfiguration<DbFriend>
 {
     public void Configure(EntityTypeBuilder<DbFriend> builder)
     {
-        builder.HasKey(f => new { f.FriendCharacterGuid, f.CharacterGuid });
+        builder.HasKey(f => new { f.FriendCharacterId, f.CharacterId });
 
         builder.Property(f => f.Created).IsRequired().HasDefaultValueSql("DATE()");
 
         builder.HasOne(f => f.FriendCharacter)
             .WithMany()
-            .HasForeignKey(f => f.FriendCharacterGuid)
+            .HasForeignKey(f => f.FriendCharacterId)
             .OnDelete(DeleteBehavior.NoAction);
     }
 }

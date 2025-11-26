@@ -4,7 +4,7 @@ namespace Sanctuary.Packet.Common;
 
 public class ActionBarSlot : ISerializableType
 {
-    public bool IsEmpty = true;
+    public bool IsEmpty;
 
     public int IconId;
     public int IconTintId;
@@ -14,6 +14,7 @@ public class ActionBarSlot : ISerializableType
     public int Unknown5;
     public int Unknown6;
     public int Unknown7;
+
     public int ManaCost;
 
     public bool Enabled;
@@ -26,7 +27,8 @@ public class ActionBarSlot : ISerializableType
 
     public int Quantity;
 
-    public bool Unknown14;
+    public bool ForceDismount;
+
     public int Unknown15;
 
     public void Serialize(PacketWriter writer)
@@ -41,6 +43,7 @@ public class ActionBarSlot : ISerializableType
         writer.Write(Unknown5);
         writer.Write(Unknown6);
         writer.Write(Unknown7);
+
         writer.Write(ManaCost);
 
         writer.Write(Enabled);
@@ -53,7 +56,8 @@ public class ActionBarSlot : ISerializableType
 
         writer.Write(Quantity);
 
-        writer.Write(Unknown14);
+        writer.Write(ForceDismount);
+
         writer.Write(Unknown15);
     }
 }

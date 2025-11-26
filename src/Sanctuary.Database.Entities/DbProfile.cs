@@ -11,6 +11,6 @@ public class DbProfile
 
     public ICollection<DbItem> Items { get; set; } = new HashSet<DbItem>();
 
-    public ulong CharacterGuid { get; set; }
+    public ulong CharacterId { get; set; }
     public DbCharacter Character { get; set; } = null!;
 }

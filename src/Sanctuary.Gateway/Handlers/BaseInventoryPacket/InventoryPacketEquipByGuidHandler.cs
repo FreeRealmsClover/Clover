@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Linq;
 
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
+using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common;
@@ -16,6 +19,7 @@ public static class InventoryPacketEquipByGuidHandler
 {
     private static ILogger _logger = null!;
     private static IResourceManager _resourceManager = null!;
+    private static IDbContextFactory<DatabaseContext> _dbContextFactory = null!;
 
     public static void ConfigureServices(IServiceProvider serviceProvider)
     {
@@ -23,6 +27,7 @@ public static class InventoryPacketEquipByGuidHandler
         _logger = loggerFactory.CreateLogger(nameof(InventoryPacketEquipByGuidHandler));
 
         _resourceManager = serviceProvider.GetRequiredService<IResourceManager>();
+        _dbContextFactory = serviceProvider.GetRequiredService<IDbContextFactory<DatabaseContext>>();
     }
 
     public static bool HandlePacket(GatewayConnection connection, ReadOnlySpan<byte> data)
@@ -49,18 +54,36 @@ public static class InventoryPacketEquipByGuidHandler
             return true;
         }
 
-        var profile = connection.Player.ActiveProfile;
+        var profile = connection.Player.Profiles.SingleOrDefault(x => x.Id == packet.ProfileId);
 
         if (profile is null)
         {
-            _logger.LogWarning("Invalid player profile. {guid} {profile}", packet.Guid, connection.Player.ActiveProfile);
+            _logger.LogWarning("Invalid player profile. {guid} {profile}", packet.Guid, packet.ProfileId);
+            return true;
+        }
+
+        using var dbContext = _dbContextFactory.CreateDbContext();
+
+        var dbProfile = dbContext.Profiles
+            .Include(x => x.Items)
+            .SingleOrDefault(x => x.CharacterId == GuidHelper.GetPlayerId(connection.Player.Guid) && x.Id == packet.ProfileId);
+
+        if (dbProfile is null)
+        {
+            _logger.LogWarning("Invalid database profile.");
+            return true;
+        }
+
+        var dbItem = dbContext.Items
+            .SingleOrDefault(x => x.CharacterId == GuidHelper.GetPlayerId(connection.Player.Guid) && x.Id == packet.Guid);
+
+        if (dbItem is null)
+        {
+            _logger.LogWarning("Invalid database item.");
             return true;
         }
 
         if (!profile.Items.TryGetValue(clientItemDefinition.Slot, out var profileItem))
-            return true;
-
-        if (profileItem is null)
         {
             profileItem = new ProfileItem();
 
@@ -68,11 +91,31 @@ public static class InventoryPacketEquipByGuidHandler
             profileItem.Slot = clientItemDefinition.Slot;
 
             profile.Items.Add(profileItem.Slot, profileItem);
+
+            dbProfile.Items.Add(dbItem);
         }
         else
         {
+            var dbItemOld = dbContext.Items
+                .SingleOrDefault(x => x.CharacterId == GuidHelper.GetPlayerId(connection.Player.Guid) && x.Id == profileItem.Id);
+
+            if (dbItemOld is null)
+            {
+                _logger.LogWarning("Invalid database item.");
+                return true;
+            }
+
             profileItem.Id = clientItem.Id;
             profileItem.Slot = clientItemDefinition.Slot;
+
+            dbProfile.Items.Add(dbItem);
+            dbProfile.Items.Remove(dbItemOld);
+        }
+
+        if (dbContext.SaveChanges() <= 0)
+        {
+            _logger.LogWarning("Failed to save to database.");
+            return true;
         }
 
         var clientUpdatePacketEquipItem = new ClientUpdatePacketEquipItem();
@@ -111,6 +154,78 @@ public static class InventoryPacketEquipByGuidHandler
         playerUpdatePacketEquipItemChange.WieldType = itemClass.WieldType;
 
         connection.Player.SendTunneledToVisible(playerUpdatePacketEquipItemChange);
+
+        // Update the Weapon composite effect if we have a Flair Shard equipped.
+        if (packet.Slot == 13)
+        {
+            if (profile.Items.TryGetValue(7, out var weaponProfileItem))
+            {
+                var weaponClientItem = connection.Player.Items.SingleOrDefault(x => x.Id == weaponProfileItem.Id);
+
+                if (weaponClientItem is not null)
+                {
+                    playerUpdatePacketEquipItemChange.Id = weaponClientItem.Id;
+
+                    if (!_resourceManager.ClientItemDefinitions.TryGetValue(weaponClientItem.Definition, out var weaponClientItemDefinition))
+                        return true;
+
+                    playerUpdatePacketEquipItemChange.Attachment.ModelName = weaponClientItemDefinition.ModelName;
+                    playerUpdatePacketEquipItemChange.Attachment.TextureAlias = weaponClientItemDefinition.TextureAlias;
+                    playerUpdatePacketEquipItemChange.Attachment.TintAlias = weaponClientItemDefinition.TintAlias;
+                    playerUpdatePacketEquipItemChange.Attachment.TintId = weaponClientItem.Tint;
+
+                    playerUpdatePacketEquipItemChange.Attachment.CompositeEffectId = clientItemDefinition.CompositeEffectId > 0
+                        ? clientItemDefinition.CompositeEffectId
+                        : weaponClientItemDefinition.CompositeEffectId;
+
+                    playerUpdatePacketEquipItemChange.Attachment.Slot = weaponClientItemDefinition.Slot;
+
+                    playerUpdatePacketEquipItemChange.ProfileId = packet.ProfileId;
+
+                    if (!_resourceManager.ItemClasses.TryGetValue(weaponClientItemDefinition.Class, out itemClass))
+                        return true;
+
+                    playerUpdatePacketEquipItemChange.WieldType = itemClass.WieldType;
+
+                    connection.Player.SendTunneledToVisible(playerUpdatePacketEquipItemChange, true);
+                }
+            }
+        }
+        else if (packet.Slot == 7)
+        {
+            if (profile.Items.TryGetValue(13, out var flairShardProfileItem))
+            {
+                var flairShardClientItem = connection.Player.Items.SingleOrDefault(x => x.Id == flairShardProfileItem.Id);
+
+                if (flairShardClientItem is not null)
+                {
+                    playerUpdatePacketEquipItemChange.Id = clientItem.Id;
+
+                    if (!_resourceManager.ClientItemDefinitions.TryGetValue(flairShardClientItem.Definition, out var flairShardClientItemDefinition))
+                        return true;
+
+                    playerUpdatePacketEquipItemChange.Attachment.ModelName = clientItemDefinition.ModelName;
+                    playerUpdatePacketEquipItemChange.Attachment.TextureAlias = clientItemDefinition.TextureAlias;
+                    playerUpdatePacketEquipItemChange.Attachment.TintAlias = clientItemDefinition.TintAlias;
+                    playerUpdatePacketEquipItemChange.Attachment.TintId = clientItem.Tint;
+
+                    playerUpdatePacketEquipItemChange.Attachment.CompositeEffectId = flairShardClientItemDefinition.CompositeEffectId > 0
+                        ? flairShardClientItemDefinition.CompositeEffectId
+                        : clientItemDefinition.CompositeEffectId;
+
+                    playerUpdatePacketEquipItemChange.Attachment.Slot = clientItemDefinition.Slot;
+
+                    playerUpdatePacketEquipItemChange.ProfileId = packet.ProfileId;
+
+                    if (!_resourceManager.ItemClasses.TryGetValue(clientItemDefinition.Class, out itemClass))
+                        return true;
+
+                    playerUpdatePacketEquipItemChange.WieldType = itemClass.WieldType;
+
+                    connection.Player.SendTunneledToVisible(playerUpdatePacketEquipItemChange, true);
+                }
+            }
+        }
 
         return true;
     }

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Packet;
@@ -46,7 +47,7 @@ public static class CommandPacketAddFriendRequestHandler
         if (dbCharacter is null)
             return true;
 
-        if (!_zoneManager.TryGetPlayer(dbCharacter.Guid, out var player))
+        if (!_zoneManager.TryGetPlayer(GuidHelper.GetPlayerGuid(dbCharacter.Id), out var player))
             return true;
 
         if (player.Ignores.Any(x => x.Guid == connection.Player.Guid))

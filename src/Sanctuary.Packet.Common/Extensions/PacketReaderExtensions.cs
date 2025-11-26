@@ -1073,9 +1073,9 @@ public static class PacketReaderExtensions
                 9 => "CoinStoreItemDynamicListUpdateResponsePacket",
                 10 => "CoinStoreMerchantListPacket",
                 11 => "CoinStoreClearTransactionHistoryPacket",
+                12 => "CoinStoreBuyBackRequestPacket",
                 13 => "CoinStoreBuyBackResponsePacket",
                 14 => "CoinStoreSellToClientAndGiftRequestPacket",
-                15 => "CoinStoreBuyBackRequestPacket",
                 17 => "CoinStoreReceiveGiftItemPacket",
                 18 => "CoinStoreGiftTransactionCompletePacket",
                 _ => "BaseCoinStorePacket"

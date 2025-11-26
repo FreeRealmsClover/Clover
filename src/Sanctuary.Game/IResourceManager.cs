@@ -14,9 +14,16 @@ public interface IResourceManager
 
     ClientItemDefinitionCollection ClientItemDefinitions { get; }
 
+    CoinStoreItemCollection CoinStoreItems { get; }
+
     ItemClassDefinitionCollection ItemClasses { get; }
     ItemCategoryDefinitionCollection ItemCategories { get; }
     ItemCategoryGroupDefinitionCollection ItemCategoryGroups { get; }
+
+    StoreDefinitionCollection Stores { get; }
+    StoreBundleGroupDefinitionCollection StoreBundleGroups { get; }
+    StoreBundleCategoryNodeCollection StoreBundleCategories { get; }
+    StoreBundleCategoryGroupDefinitionCollection StoreBundleCategoryGroups { get; }
 
     ZoneDefinitionCollection Zones { get; }
     MountDefinitionCollection Mounts { get; }

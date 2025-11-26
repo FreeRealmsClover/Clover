@@ -30,9 +30,13 @@ public class HouseDefinitionCollection : ObservableConcurrentDictionary<int, Hou
         try
         {
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var streamReader = new StreamReader(fileStream);
 
-            var entries = JsonSerializer.Deserialize<List<HouseDefinition>>(streamReader.ReadToEnd());
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var entries = JsonSerializer.Deserialize<List<HouseDefinition>>(fileStream, jsonSerializerOptions);
 
             if (entries is null)
             {

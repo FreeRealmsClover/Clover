@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Packet;
@@ -65,7 +66,7 @@ public static class ChangeNameRequestPacketHandler
     {
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == connection.Player.Guid);
+        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Id == GuidHelper.GetPlayerId(connection.Player.Guid));
 
         if (dbCharacter is null)
             return ChangeNameResponse.Error;

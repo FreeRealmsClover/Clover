@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Numerics;
@@ -139,6 +140,44 @@ public ref struct PacketReader
 
         if (isLittleEndian != BitConverter.IsLittleEndian)
             result = BinaryPrimitives.ReverseEndianness(result);
+
+        return true;
+    }
+
+    public bool TryRead<T>(out List<T> value) where T : unmanaged
+    {
+        value = [];
+
+        if (!TryRead(out int count))
+            return false;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (!TryRead(out T item))
+                return false;
+
+            value.Add(item);
+        }
+
+        return true;
+    }
+
+    public bool TryReadList<T>(out List<T> value) where T : IDeserializableType, new()
+    {
+        value = [];
+
+        if (!TryRead(out int count))
+            return false;
+
+        for (int i = 0; i < count; i++)
+        {
+            var item = new T();
+
+            if (!item.TryRead(ref this))
+                return false;
+
+            value.Add(item);
+        }
 
         return true;
     }

@@ -4,12 +4,12 @@ namespace Sanctuary.Packet.Common;
 
 public class ItemDefinitionMetaData : ISerializableType
 {
-    public int Id;
-    public int CategoryId;
-    public int TintGroupId;
-    public bool BuyDisabled;
-    public bool CoinStoreOnly;
-    public bool Hidden;
+    public int Id { get; set; }
+    public int CategoryId { get; set; }
+    public int TintGroupId { get; set; }
+    public bool BuyDisabled { get; set; }
+    public bool CoinStoreOnly { get; set; }
+    public bool Hidden { get; set; }
 
     public void Serialize(PacketWriter writer)
     {

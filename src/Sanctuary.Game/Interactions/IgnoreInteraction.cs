@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.Game.Entities;
@@ -38,15 +39,15 @@ public class IgnoreInteraction : IInteraction
 
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == player.Guid);
+        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Id == GuidHelper.GetPlayerId(player.Guid));
 
         if (dbCharacter is null)
             return;
 
         dbCharacter.Ignores.Add(new DbIgnore
         {
-            CharacterGuid = dbCharacter.Guid,
-            IgnoreCharacterGuid = otherPlayer.Guid,
+            CharacterId = dbCharacter.Id,
+            IgnoreCharacterId = GuidHelper.GetPlayerId(otherPlayer.Guid),
         });
 
         if (dbContext.SaveChanges() <= 0)

@@ -30,10 +30,14 @@ public class ZoneDefinitionCollection : ObservableConcurrentDictionary<int, Base
         {
             try
             {
-                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.ReadWrite);
-                using var streamReader = new StreamReader(fileStream);
+                var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-                var entry = JsonSerializer.Deserialize<BaseZoneDefinition>(streamReader.ReadToEnd());
+                var jsonSerializerOptions = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var entry = JsonSerializer.Deserialize<BaseZoneDefinition>(fileStream, jsonSerializerOptions);
 
                 if (entry is null)
                 {

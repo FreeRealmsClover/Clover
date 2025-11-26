@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game;
 using Sanctuary.Game.Packet.Common;
@@ -36,7 +37,7 @@ public static class CharacterSelectInfoRequestHandler
 
         var characterSelectInfoReply = new CharacterSelectInfoReply();
 
-        if (connection.Guid == 0)
+        if (connection.UserId == 0)
         {
             connection.Send(characterSelectInfoReply);
 
@@ -47,7 +48,7 @@ public static class CharacterSelectInfoRequestHandler
 
         var characters = dbContext.Characters
             .AsNoTracking()
-            .Where(x => x.UserGuid == connection.Guid)
+            .Where(x => x.UserId == connection.UserId)
             .Include(x => x.Profiles)
                 .ThenInclude(x => x.Items)
             .AsSplitQuery()
@@ -62,7 +63,7 @@ public static class CharacterSelectInfoRequestHandler
                 HeadshotUrl = "headshot.png",
                 Data =
                 {
-                    Guid = character.Guid,
+                    Guid = GuidHelper.GetPlayerGuid(character.Id),
                     Name = string.IsNullOrEmpty(character.LastName)
                          ? character.FirstName
                          : $"{character.FirstName} {character.LastName}",
@@ -100,7 +101,7 @@ public static class CharacterSelectInfoRequestHandler
 
             var entityDetails = new EntityDetails
             {
-                EntityKey = character.Guid,
+                EntityKey = GuidHelper.GetPlayerGuid(character.Id),
                 Status = 1,
                 ApplicationData = accountInfoCharacterDetails.Serialize()
             };

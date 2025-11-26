@@ -8,7 +8,7 @@ public class GatewayCharacterLogin : ISerializablePacket, IDeserializable<Gatewa
 {
     public const byte OpCode = 102;
 
-    public ulong Guid;
+    public ulong Id;
 
     public byte[] Serialize()
     {
@@ -16,7 +16,7 @@ public class GatewayCharacterLogin : ISerializablePacket, IDeserializable<Gatewa
 
         writer.Write(OpCode);
 
-        writer.Write(Guid);
+        writer.Write(Id);
 
         return writer.Buffer;
     }
@@ -30,7 +30,7 @@ public class GatewayCharacterLogin : ISerializablePacket, IDeserializable<Gatewa
         if (!reader.TryRead(out byte opCode) && opCode != OpCode)
             return false;
 
-        if (!reader.TryRead(out value.Guid))
+        if (!reader.TryRead(out value.Id))
             return false;
 
         return reader.RemainingLength == 0;

@@ -45,6 +45,9 @@ public sealed class Player : ClientPcData, IEntity
 
     public ConcurrentDictionary<ChatChannel, bool> ChatChannelStatus { get; set; } = [];
 
+    public int StationCash { get; set; }
+    public List<CoinStoreTransactionRecord> CoinStoreTransactions { get; set; } = [];
+
     public Vector4 StartingZonePosition { get; set; }
     public Quaternion StartingZoneRotation { get; set; }
 
@@ -324,8 +327,6 @@ public sealed class Player : ClientPcData, IEntity
                 playerUpdatePacketRemovePlayerGracefully.Duration = 1000;
 
                 SendTunneled(playerUpdatePacketRemovePlayerGracefully);
-
-                Debug.WriteLine($"RemoveMount: {Guid} {mount.Guid} {mount.Seat} {mount.QueuePosition}");
             }
             else
             {
@@ -387,32 +388,74 @@ public sealed class Player : ClientPcData, IEntity
 
     #endregion
 
+    public int GetFlairShardCompositeEffect()
+    {
+        const int FlairShardSlot = 13;
+
+        if (ActiveProfile.Items.TryGetValue(FlairShardSlot, out var profileItem))
+        {
+            var clientItem = Items.FirstOrDefault(x => x.Id == profileItem.Id);
+
+            if (clientItem is not null)
+            {
+                if (_resourceManager.ClientItemDefinitions.TryGetValue(clientItem.Definition, out var clientItemDefinition))
+                    return clientItemDefinition.CompositeEffectId;
+            }
+        }
+
+        return 0;
+    }
+
     public List<CharacterAttachmentData> GetAttachments()
     {
         var list = new List<CharacterAttachmentData>();
 
         foreach (var profileItem in ActiveProfile.Items)
         {
-            var clientItem = Items.FirstOrDefault(x => x.Id == profileItem.Value.Id);
+            var attachment = GetAttachment(profileItem.Key);
 
-            if (clientItem is null)
+            if (attachment is null)
                 continue;
 
-            if (!_resourceManager.ClientItemDefinitions.TryGetValue(clientItem.Definition, out var clientItemDefinition))
-                continue;
-
-            list.Add(new CharacterAttachmentData
-            {
-                ModelName = clientItemDefinition.ModelName,
-                TextureAlias = clientItemDefinition.TextureAlias,
-                TintAlias = clientItemDefinition.TintAlias,
-                TintId = clientItem.Tint,
-                CompositeEffectId = clientItemDefinition.CompositeEffectId,
-                Slot = clientItemDefinition.Slot
-            });
+            list.Add(attachment);
         }
 
         return list;
+    }
+
+    public CharacterAttachmentData? GetAttachment(int slot)
+    {
+        if (!ActiveProfile.Items.TryGetValue(slot, out var profileItem))
+            return null;
+
+        var clientItem = Items.FirstOrDefault(x => x.Id == profileItem.Id);
+
+        if (clientItem is null)
+            return null;
+
+        if (!_resourceManager.ClientItemDefinitions.TryGetValue(clientItem.Definition, out var clientItemDefinition))
+            return null;
+
+        var compositeEffectId = clientItemDefinition.CompositeEffectId;
+
+        // Update the Weapon composite effect if we have a Flair Shard equipped.
+        if (slot == 7)
+        {
+            var flairShardcompositeEffectId = GetFlairShardCompositeEffect();
+
+            if (flairShardcompositeEffectId > 0)
+                compositeEffectId = flairShardcompositeEffectId;
+        }
+
+        return new CharacterAttachmentData
+        {
+            ModelName = clientItemDefinition.ModelName,
+            TextureAlias = clientItemDefinition.TextureAlias,
+            TintAlias = clientItemDefinition.TintAlias,
+            TintId = clientItem.Tint,
+            CompositeEffectId = compositeEffectId,
+            Slot = clientItemDefinition.Slot
+        };
     }
 
     public PlayerUpdatePacketAddPc GetAddPcPacket()

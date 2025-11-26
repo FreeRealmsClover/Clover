@@ -23,9 +23,17 @@ public class ResourceManager : IResourceManager
 
     public static readonly string ClientItemDefinitionsFile = Path.Combine(BaseDirectory, "ClientItemDefinitions.json");
 
+    public static readonly string CoinStoreItemsFile = Path.Combine(BaseDirectory, "CoinStoreItems.json");
+
     public static readonly string ItemClassesFile = Path.Combine(BaseDirectory, "ItemClasses.txt");
     public static readonly string ItemCategoriesFile = Path.Combine(BaseDirectory, "ItemCategories.txt");
     public static readonly string ItemCategoryGroupsFile = Path.Combine(BaseDirectory, "ItemCategoryGroups.txt");
+
+    public static readonly string StoresFile = Path.Combine(BaseDirectory, "Stores.json");
+    public static readonly string StoreBundlesFile = Path.Combine(BaseDirectory, "StoreBundles.json");
+    public static readonly string StoreBundleGroupsFile = Path.Combine(BaseDirectory, "StoreBundleGroups.json");
+    public static readonly string StoreBundleCategoriesFile = Path.Combine(BaseDirectory, "StoreBundleCategories.json");
+    public static readonly string StoreBundleCategoryGroupsFile = Path.Combine(BaseDirectory, "StoreBundleCategoryGroups.json");
 
     public static readonly string ZonesDirectory = Path.Combine(BaseDirectory, "Zones");
     public static readonly string HousesFile = Path.Combine(BaseDirectory, "Houses.json");
@@ -45,9 +53,16 @@ public class ResourceManager : IResourceManager
 
     public ClientItemDefinitionCollection ClientItemDefinitions { get; }
 
+    public CoinStoreItemCollection CoinStoreItems { get; }
+
     public ItemClassDefinitionCollection ItemClasses { get; }
     public ItemCategoryDefinitionCollection ItemCategories { get; }
     public ItemCategoryGroupDefinitionCollection ItemCategoryGroups { get; }
+
+    public StoreDefinitionCollection Stores { get; }
+    public StoreBundleGroupDefinitionCollection StoreBundleGroups { get; }
+    public StoreBundleCategoryNodeCollection StoreBundleCategories { get; }
+    public StoreBundleCategoryGroupDefinitionCollection StoreBundleCategoryGroups { get; }
 
     public ZoneDefinitionCollection Zones { get; }
     public HouseDefinitionCollection Houses { get; }
@@ -75,9 +90,16 @@ public class ResourceManager : IResourceManager
 
         ClientItemDefinitions = new(_logger);
 
+        CoinStoreItems = new(_logger);
+
         ItemClasses = new(_logger);
         ItemCategories = new(_logger);
         ItemCategoryGroups = new(_logger);
+
+        Stores = new(_logger);
+        StoreBundleGroups = new(_logger);
+        StoreBundleCategories = new(_logger);
+        StoreBundleCategoryGroups = new(_logger);
 
         Zones = new(_logger);
         Houses = new(_logger);
@@ -111,6 +133,9 @@ public class ResourceManager : IResourceManager
         if (!ClientItemDefinitions.Load(ClientItemDefinitionsFile))
             return false;
 
+        if (!CoinStoreItems.Load(CoinStoreItemsFile))
+            return false;
+
         if (!ItemClasses.Load(ItemClassesFile))
             return false;
 
@@ -118,6 +143,18 @@ public class ResourceManager : IResourceManager
             return false;
 
         if (!ItemCategoryGroups.Load(ItemCategoryGroupsFile))
+            return false;
+
+        if (!Stores.Load(StoresFile) || !Stores.LoadBundles(StoreBundlesFile))
+            return false;
+
+        if (!StoreBundleGroups.Load(StoreBundleGroupsFile))
+            return false;
+
+        if (!StoreBundleCategories.Load(StoreBundleCategoriesFile))
+            return false;
+
+        if (!StoreBundleCategoryGroups.Load(StoreBundleCategoryGroupsFile))
             return false;
 
         if (!Zones.Load(ZonesDirectory))
@@ -175,6 +212,16 @@ public class ResourceManager : IResourceManager
                 loaded = ItemCategories.Load(ItemCategoriesFile);
             else if (e.FullPath == ItemCategoryGroupsFile)
                 loaded = ItemCategoryGroups.Load(ItemCategoryGroupsFile);
+            else if (e.FullPath == StoresFile)
+                loaded = Stores.Load(StoresFile);
+            else if (e.FullPath == StoreBundlesFile)
+                loaded = Stores.LoadBundles(StoreBundlesFile);
+            else if (e.FullPath == StoreBundleGroupsFile)
+                loaded = StoreBundleGroups.Load(StoreBundleGroupsFile);
+            else if (e.FullPath == StoreBundleCategoriesFile)
+                loaded = StoreBundleCategories.Load(StoreBundleCategoriesFile);
+            else if (e.FullPath == StoreBundleCategoryGroupsFile)
+                loaded = StoreBundleCategoryGroups.Load(StoreBundleCategoryGroupsFile);
             else if (e.FullPath == HousesFile)
                 loaded = Houses.Load(HousesFile);
             else if (e.FullPath == MountsFile)

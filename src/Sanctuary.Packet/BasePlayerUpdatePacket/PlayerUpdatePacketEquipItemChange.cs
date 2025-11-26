@@ -11,8 +11,7 @@ public class PlayerUpdatePacketEquipItemChange : BasePlayerUpdatePacket, ISerial
 
     public int Id;
 
-    // Not read by the client.
-    public int Unknown;
+    private int Unused = default;
 
     public CharacterAttachmentData Attachment = new();
 
@@ -38,7 +37,7 @@ public class PlayerUpdatePacketEquipItemChange : BasePlayerUpdatePacket, ISerial
 
         writer.Write(ProfileId);
 
-        writer.Write(Unknown);
+        writer.Write(Unused);
 
         writer.Write(WieldType);
 

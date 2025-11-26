@@ -29,10 +29,14 @@ public class PointOfInterestDefinitionCollection : ObservableConcurrentDictionar
 
         try
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var streamReader = new StreamReader(fileStream);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            var entries = JsonSerializer.Deserialize<List<PointOfInterestDefinition>>(streamReader.ReadToEnd());
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var entries = JsonSerializer.Deserialize<List<PointOfInterestDefinition>>(fileStream, jsonSerializerOptions);
 
             if (entries is null)
             {

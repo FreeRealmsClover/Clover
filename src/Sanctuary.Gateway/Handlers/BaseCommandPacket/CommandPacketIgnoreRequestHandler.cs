@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.Game;
@@ -48,7 +49,7 @@ public static class CommandPacketIgnoreRequestHandler
         if (dbCharacterToIgnore is null)
             return true;
 
-        if (!_zoneManager.TryGetPlayer(dbCharacterToIgnore.Guid, out var playerToIgnore))
+        if (!_zoneManager.TryGetPlayer(GuidHelper.GetPlayerGuid(dbCharacterToIgnore.Id), out var playerToIgnore))
             return true;
 
         if (packet.Ignore)
@@ -56,15 +57,15 @@ public static class CommandPacketIgnoreRequestHandler
             if (connection.Player.Ignores.Any(x => x.Guid == playerToIgnore.Guid))
                 return true;
 
-            var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == connection.Player.Guid);
+            var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Id == GuidHelper.GetPlayerId(connection.Player.Guid));
 
             if (dbCharacter is null)
                 return true;
 
             dbCharacter.Ignores.Add(new DbIgnore
             {
-                CharacterGuid = dbCharacter.Guid,
-                IgnoreCharacterGuid = dbCharacterToIgnore.Guid,
+                CharacterId = dbCharacter.Id,
+                IgnoreCharacterId = dbCharacterToIgnore.Id,
             });
 
             if (dbContext.SaveChanges() <= 0)
@@ -88,8 +89,8 @@ public static class CommandPacketIgnoreRequestHandler
         else
         {
             var dbIgnoreToRemove = dbContext.Ignores.Where(x =>
-                x.CharacterGuid == connection.Player.Guid &&
-                x.IgnoreCharacterGuid == dbCharacterToIgnore.Guid);
+                x.CharacterId == GuidHelper.GetPlayerId(connection.Player.Guid) &&
+                x.IgnoreCharacterId == dbCharacterToIgnore.Id);
 
             if (dbIgnoreToRemove.ExecuteDelete() <= 0)
                 return true;

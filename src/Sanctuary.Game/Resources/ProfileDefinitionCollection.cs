@@ -21,14 +21,6 @@ public class ProfileDefinitionCollection : ObservableConcurrentDictionary<int, C
 
     public bool Load(string filePath)
     {
-        var directory = Path.GetDirectoryName(filePath);
-
-        if (directory is null)
-        {
-            _logger.LogError("Invalid directory. \"{directory}\"", filePath);
-            return false;
-        }
-
         if (!File.Exists(filePath))
         {
             _logger.LogError("Failed to find file \"{file}\"", filePath);
@@ -37,10 +29,14 @@ public class ProfileDefinitionCollection : ObservableConcurrentDictionary<int, C
 
         try
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            using var streamReader = new StreamReader(fileStream);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-            var entries = JsonSerializer.Deserialize<List<ClientProfileData>>(streamReader.ReadToEnd());
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var entries = JsonSerializer.Deserialize<List<ClientProfileData>>(fileStream, jsonSerializerOptions);
 
             if (entries is null)
             {

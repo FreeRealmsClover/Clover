@@ -41,7 +41,9 @@ public static class PacketTunneledClientWorldPacketHandler
         {
             BaseCommandPacket.OpCode => BaseCommandPacketHandler.HandlePacket(connection, reader),
             PacketWorldTeleportRequest.OpCode => PacketWorldTeleportRequestHandler.HandlePacket(connection, packet.Payload),
+            PacketBaseInGamePurchase.OpCode => PacketBaseInGamePurchaseHandler.HandlePacket(connection, reader),
             PacketSetLocale.OpCode => PacketSetLocaleHandler.HandlePacket(connection, packet.Payload),
+            BaseLobbyGameDefinitionPacket.OpCode => BaseLobbyGameDefinitionPacketHandler.HandlePacket(connection, reader),
             BaseHousingPacket.OpCode => BaseHousingPacketHandler.HandlePacket(connection, reader),
             BaseFotomatPacket.OpCode => BaseFotomatPacketHandler.HandlePacket(connection, reader),
             WallOfDataBasePacket.OpCode => WallOfDataBasePacketHandler.HandlePacket(connection, reader),

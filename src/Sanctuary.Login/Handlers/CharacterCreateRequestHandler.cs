@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Sanctuary.Core.Configuration;
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.Game;
@@ -61,9 +61,9 @@ public static class CharacterCreateRequestHandler
             return true;
         }
 
-        if (connection.Guid == 0)
+        if (connection.UserId == 0)
         {
-            _logger.LogError("Failed to create character, unknown guid.");
+            _logger.LogError("Failed to create character, unknown user id.");
 
             characterCreateReply.Result = 3;
 
@@ -192,7 +192,7 @@ public static class CharacterCreateRequestHandler
             return true;
         }
 
-        var dbUser = dbContext.Users.SingleOrDefault(x => x.Guid == connection.Guid);
+        var dbUser = dbContext.Users.SingleOrDefault(x => x.Id == connection.UserId);
 
         if (dbUser is null)
         {
@@ -205,7 +205,7 @@ public static class CharacterCreateRequestHandler
             return true;
         }
 
-        var characterCount = dbContext.Characters.Count(x => x.UserGuid == connection.Guid);
+        var characterCount = dbContext.Characters.Count(x => x.UserId == connection.UserId);
 
         if (characterCount >= dbUser.MaxCharacters)
         {
@@ -224,10 +224,15 @@ public static class CharacterCreateRequestHandler
             LastName = characterData.LastName ?? string.Empty,
             Model = characterData.Model,
             Head = head,
+            HeadId = characterData.Head,
             Hair = hair,
+            HairId = characterData.Hair,
             ModelCustomization = modelCustomization,
+            ModelCustomizationId = characterData.ModelCustomization,
             FacePaint = facePaint,
+            FacePaintId = characterData.FacePaint,
             SkinTone = skinTone,
+            SkinToneId = characterData.SkinTone,
             EyeColor = characterData.EyeColor,
             HairColor = characterData.HairColor,
 
@@ -235,8 +240,11 @@ public static class CharacterCreateRequestHandler
 
             MembershipStatus = dbUser.IsMember ? 2 : 0,
 
-            UserGuid = connection.Guid
+            UserId = connection.UserId
         };
+
+        dbCharacter.Coins = _options.StartingCoins;
+        dbCharacter.StationCash = _options.StartingStationCash;
 
         if (_options.DefaultTitleId > 0)
         {
@@ -308,14 +316,8 @@ public static class CharacterCreateRequestHandler
 
         dbCharacter.Profiles.Add(dbProfile);
 
-        if (_options.UnlockAllItems)
-            UnlockAllItems(dbCharacter);
-
         if (_options.UnlockAllTitles)
             UnlockAllTitles(dbCharacter);
-
-        if (_options.UnlockAllMounts)
-            UnlockAllMounts(dbCharacter);
 
         if (_options.UnlockAllProfiles)
             UnlockAllProfiles(dbCharacter, chestItem, legItem, feetItem);
@@ -325,42 +327,12 @@ public static class CharacterCreateRequestHandler
         if (dbContext.SaveChanges() > 0)
         {
             characterCreateReply.Result = 1;
-            characterCreateReply.Guid = dbCharacter.Guid;
+            characterCreateReply.Guid = GuidHelper.GetPlayerGuid(dbCharacter.Id);
         }
 
         connection.Send(characterCreateReply);
 
         return true;
-    }
-
-    private static void UnlockAllItems(DbCharacter dbCharacter)
-    {
-        var items = new List<DbItem>();
-
-        foreach (var clientItemDefinition in _resourceManager.ClientItemDefinitions.Values)
-        {
-            if (clientItemDefinition.Type != 1 && clientItemDefinition.Type != 12)
-                continue;
-
-            if (clientItemDefinition.GenderUsage != 0 && clientItemDefinition.GenderUsage != dbCharacter.Gender)
-                continue;
-
-            if (string.IsNullOrEmpty(clientItemDefinition.ModelName))
-                continue;
-
-            if (dbCharacter.Items.Any(x => x.Definition == clientItemDefinition.Id))
-                continue;
-
-            var dbItem = new DbItem
-            {
-                Id = dbCharacter.Items.Count + 1,
-                Definition = clientItemDefinition.Id,
-                Tint = clientItemDefinition.Icon.TintId,
-                Count = 1
-            };
-
-            dbCharacter.Items.Add(dbItem);
-        }
     }
 
     private static void UnlockAllTitles(DbCharacter dbCharacter)
@@ -376,20 +348,6 @@ public static class CharacterCreateRequestHandler
             };
 
             dbCharacter.Titles.Add(dbCharacterTitle);
-        }
-    }
-
-    private static void UnlockAllMounts(DbCharacter dbCharacter)
-    {
-        foreach (var mount in _resourceManager.Mounts.Values)
-        {
-            var dbMount = new DbMount
-            {
-                Id = mount.Id,
-                IsUpgraded = mount.IsUpgraded
-            };
-
-            dbCharacter.Mounts.Add(dbMount);
         }
     }
 

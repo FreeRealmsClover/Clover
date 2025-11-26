@@ -29,7 +29,7 @@ public static class GatewayCharacterLogoutHandler
 
         _logger.LogTrace("Received {name} packet. ( {packet} )", nameof(GatewayCharacterLogout), packet);
 
-        connection.OnlineCharacters.Remove(packet.Guid);
+        connection.OnlineCharacters.Remove(packet.id);
 
         return true;
     }

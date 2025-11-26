@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Numerics;
+using System.Text;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using Sanctuary.Core.Configuration;
+using Sanctuary.Core.Cryptography;
+using Sanctuary.Core.Helpers;
 using Sanctuary.Core.IO;
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
@@ -33,6 +36,11 @@ public class GatewayConnection : UdpConnection
     private readonly IResourceManager _resourceManager;
     private readonly IDbContextFactory<DatabaseContext> _dbContextFactory;
 
+    private ICipher _cipher;
+#pragma warning disable CS0649
+    private bool _useEncryption; // Hardcoded in the client.
+#pragma warning restore CS0649
+
     // Player will only be null during login.
     public Player Player { get; private set; } = null!;
 
@@ -48,6 +56,13 @@ public class GatewayConnection : UdpConnection
         _resourceManager = resourceManager;
         _serviceProvider = serviceProvider;
         _dbContextFactory = dbContextFactory;
+
+        _cipher = new CipherCCM();
+    }
+
+    public void InitializeCipher(string key)
+    {
+        _cipher.Initialize(Encoding.ASCII.GetBytes(key));
     }
 
     public override void OnTerminated()
@@ -64,7 +79,7 @@ public class GatewayConnection : UdpConnection
 
         SendFriendOffline();
 
-        _loginClient.SendCharacterLogout(Player.Guid);
+        _loginClient.SendCharacterLogout(GuidHelper.GetPlayerId(Player.Guid));
 
         SavePlayerToDatabase();
 
@@ -72,6 +87,18 @@ public class GatewayConnection : UdpConnection
     }
 
     public override void OnRoutePacket(Span<byte> data)
+    {
+        if ((!_useEncryption || !_cipher.Decrypt(data, out var finalLength))
+            && (_useEncryption || !PacketUtils.UnwrapPacket(data, out finalLength, _cipher)))
+        {
+            _logger.LogError("{connection} failed to unwrap/decrypt packet. ( Data: {data} )", this, Convert.ToHexString(data));
+            return;
+        }
+
+        OnHandlePacket(data.Slice(0, finalLength));
+    }
+
+    private void OnHandlePacket(Span<byte> data)
     {
         var reader = new PacketReader(data);
 
@@ -102,39 +129,63 @@ public class GatewayConnection : UdpConnection
         _logger.LogError("[PacketCorrupt] Guid: {guid}, Reason: {reason}, Data: {data}", Player?.Guid, reason, Convert.ToHexString(data));
     }
 
-    public void Send(ISerializablePacket packet)
-    {
-        var data = packet.Serialize();
-
-        Send(UdpChannel.Reliable1, data);
-    }
-
-    public void SendTunneled(ISerializablePacket packet)
+    public void SendTunneled(ISerializablePacket packet, bool reliable = true, bool secure = false)
     {
         var packetTunneled = new PacketTunneledClientPacket
         {
             Payload = packet.Serialize()
         };
 
-        Send(packetTunneled);
+        Send(packetTunneled, reliable, secure);
     }
 
-    [Obsolete]
-    public void SendTunneled(byte[] data)
+    public void Send(ISerializablePacket packet, bool reliable = true, bool secure = false)
     {
-        var packetTunneledClientPacket = new PacketTunneledClientPacket
-        {
-            Payload = data
-        };
+        var data = packet.Serialize();
 
-        Send(packetTunneledClientPacket);
+        if (secure)
+            InternalSendSecure(data);
+        else
+            InternalSend(data, reliable);
+    }
+
+    private void InternalSend(Span<byte> data, bool reliable)
+    {
+        if (_useEncryption)
+        {
+            InternalSendSecure(data);
+            return;
+        }
+
+        Send(reliable ? UdpChannel.Reliable1 : UdpChannel.Unreliable, data);
+    }
+
+    private void InternalSendSecure(Span<byte> data)
+    {
+        if (_cipher is null || !_cipher.IsInitialized)
+            return;
+
+        using var writer = new PacketWriter();
+
+        if (_useEncryption)
+        {
+            if (!_cipher.Encrypt(data, writer))
+                return;
+        }
+        else
+        {
+            if (!PacketUtils.WrapPacket(data, writer, true, _cipher))
+                return;
+        }
+
+        Send(UdpChannel.Reliable1, writer.Buffer);
     }
 
     public bool CreatePlayerFromDatabase(DbCharacter dbCharacter)
     {
         var startingZone = _zoneManager.StartingZone;
 
-        if (!startingZone.TryCreatePlayer(dbCharacter.Guid, this, out var player))
+        if (!startingZone.TryCreatePlayer(GuidHelper.GetPlayerGuid(dbCharacter.Id), this, out var player))
         {
             _logger.LogError("Failed to create player entity.");
             return false;
@@ -147,15 +198,22 @@ public class GatewayConnection : UdpConnection
         Player.Model = dbCharacter.Model;
 
         Player.Head = dbCharacter.Head;
+        Player.HeadId = dbCharacter.HeadId;
+
         Player.Hair = dbCharacter.Hair;
+        Player.HairId = dbCharacter.HairId;
 
         Player.HairColor = dbCharacter.HairColor;
         Player.EyeColor = dbCharacter.EyeColor;
 
         Player.SkinTone = dbCharacter.SkinTone;
+        Player.SkinToneId = dbCharacter.SkinToneId;
 
         Player.FacePaint = dbCharacter.FacePaint;
+        Player.FacePaintId = dbCharacter.FacePaintId ?? 0;
+
         Player.ModelCustomization = dbCharacter.ModelCustomization;
+        Player.ModelCustomizationId = dbCharacter.ModelCustomizationId ?? 0;
 
         var position = dbCharacter.PositionX.HasValue && dbCharacter.PositionY.HasValue && dbCharacter.PositionZ.HasValue
             ? new Vector4(dbCharacter.PositionX.Value, dbCharacter.PositionY.Value, dbCharacter.PositionZ.Value, 1f)
@@ -169,6 +227,8 @@ public class GatewayConnection : UdpConnection
 
         Player.Name.FirstName = dbCharacter.FirstName;
         Player.Name.LastName = dbCharacter.LastName ?? string.Empty;
+
+        Player.Coins = dbCharacter.Coins;
 
         Player.Birthday = dbCharacter.Created;
 
@@ -249,15 +309,16 @@ public class GatewayConnection : UdpConnection
 
         foreach (var dbMount in dbCharacter.Mounts)
         {
-            if (!_resourceManager.Mounts.TryGetValue(dbMount.Id, out var mountDefinition))
+            if (!_resourceManager.Mounts.TryGetValue(dbMount.Definition, out var mountDefinition))
                 continue;
 
             Player.Mounts.Add(new PacketMountInfo
             {
-                Id = mountDefinition.Id,
+                Id = dbMount.Id,
+                Definition = mountDefinition.Id,
                 NameId = mountDefinition.NameId,
                 ImageSetId = mountDefinition.ImageSetId,
-                TintId = mountDefinition.TintId,
+                TintId = dbMount.Tint,
                 TintAlias = mountDefinition.TintAlias,
                 MembersOnly = mountDefinition.MembersOnly,
                 IsUpgradable = mountDefinition.IsUpgradable,
@@ -272,10 +333,10 @@ public class GatewayConnection : UdpConnection
 
         clientActionBar.Id = 2; // ItemActionBar
 
-        clientActionBar.Slots.Add(0, new ActionBarSlot());
-        clientActionBar.Slots.Add(1, new ActionBarSlot());
-        clientActionBar.Slots.Add(2, new ActionBarSlot());
-        clientActionBar.Slots.Add(3, new ActionBarSlot());
+        clientActionBar.Slots.Add(0, new ActionBarSlot() { IsEmpty = true });
+        clientActionBar.Slots.Add(1, new ActionBarSlot() { IsEmpty = true });
+        clientActionBar.Slots.Add(2, new ActionBarSlot() { IsEmpty = true });
+        clientActionBar.Slots.Add(3, new ActionBarSlot() { IsEmpty = true });
 
         Player.ActionBars.Add(clientActionBar.Id, clientActionBar);
         // End - Store on DB
@@ -307,14 +368,12 @@ public class GatewayConnection : UdpConnection
                     FirstName = dbFriend.FriendCharacter.FirstName,
                     LastName = dbFriend.FriendCharacter.LastName ?? string.Empty
                 },
-                Guid = dbFriend.FriendCharacterGuid,
-                Unknown = dbFriend.FriendCharacterGuid,
-
+                Guid = GuidHelper.GetPlayerGuid(dbFriend.FriendCharacterId),
                 IsLocal = true,
                 IsInStaticZone = true
             };
 
-            if (_zoneManager.TryGetPlayer(dbFriend.FriendCharacterGuid, out var friendPlayer))
+            if (_zoneManager.TryGetPlayer(GuidHelper.GetPlayerGuid(dbFriend.FriendCharacterId), out var friendPlayer))
             {
                 friendData.Online = true;
 
@@ -332,12 +391,14 @@ public class GatewayConnection : UdpConnection
         {
             var ignoreData = new IgnoreData
             {
-                Guid = dbIgnore.IgnoreCharacterGuid,
+                Guid = GuidHelper.GetPlayerGuid(dbIgnore.IgnoreCharacterId),
                 Name = dbIgnore.IgnoreCharacter.FullName
             };
 
             Player.Ignores.Add(ignoreData);
         }
+
+        Player.StationCash = dbCharacter.StationCash;
 
         return true;
     }
@@ -346,7 +407,7 @@ public class GatewayConnection : UdpConnection
     {
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Guid == Player.Guid);
+        var dbCharacter = dbContext.Characters.FirstOrDefault(x => x.Id == GuidHelper.GetPlayerId(Player.Guid));
 
         if (dbCharacter is null)
         {

@@ -30,7 +30,13 @@ public static class BaseInventoryPacketHandler
 
         return opCode switch
         {
+            InventoryPacketEquippedRemove.OpCode => InventoryPacketEquippedRemoveHandler.HandlePacket(connection, reader.Span),
             InventoryPacketEquipByGuid.OpCode => InventoryPacketEquipByGuidHandler.HandlePacket(connection, reader.Span),
+            InventoryPacketItemActionBarAssign.OpCode => InventoryPacketItemActionBarAssignHandler.HandlePacket(connection, reader.Span),
+            InventoryPacketEquipByItemRecord.OpCode => InventoryPacketEquipByItemRecordHandler.HandlePacket(connection, reader.Span),
+            InventoryPacketUseStyleCard.OpCode => InventoryPacketUseStyleCardHandler.HandlePacket(connection, reader.Span),
+            InventoryPacketPreviewStyleCard.OpCode => InventoryPacketPreviewStyleCardHandler.HandlePacket(connection, reader.Span),
+            InventoryPacketUseStyleCardByItemRecord.OpCode => InventoryPacketUseStyleCardByItemRecordHandler.HandlePacket(connection, reader.Span),
             _ => false
         };
     }

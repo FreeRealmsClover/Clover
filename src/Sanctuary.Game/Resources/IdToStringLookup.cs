@@ -28,7 +28,7 @@ public class IdToStringLookup : ObservableConcurrentDictionary<int, string>
 
         try
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             using var reader = Sep.New('^')
                 .Reader()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 
@@ -38,11 +39,35 @@ public sealed class StartingZone : BaseZone
 
         SendUpdateStat(player);
 
+        var clientUpdatePacketHitpoints = new ClientUpdatePacketHitpoints
+        {
+            CurrentHitpoints = 2500,
+            MaxHitpoints = 2500
+        };
+
+        player.SendTunneled(clientUpdatePacketHitpoints);
+
+        var clientUpdatePacketMana = new ClientUpdatePacketMana
+        {
+            CurrentMana = 100,
+            MaxMana = 100
+        };
+
+        player.SendTunneled(clientUpdatePacketMana);
+
         SendReferenceData(player);
+
+        SendCoinStoreItemList(player);
 
         SendAdventurersJournalInfo(player);
 
         SendWelcomeInfo(player);
+
+        SendPlayerCustomizations(player);
+
+        SendMembershipSubscriptionInfo(player);
+
+        SendInGamePurchase(player);
 
         var packetZoneDoneSendingInitialData = new PacketZoneDoneSendingInitialData();
 
@@ -140,6 +165,35 @@ public sealed class StartingZone : BaseZone
         referenceDataPacketClientProfileData.Profiles = _resourceManager.Profiles.ToDictionary();
 
         player.SendTunneled(referenceDataPacketClientProfileData);
+    }
+
+    private void SendCoinStoreItemList(Player player)
+    {
+        var coinStoreItemListPacket = new CoinStoreItemListPacket();
+
+        coinStoreItemListPacket.StaticItems = _resourceManager.CoinStoreItems.ToDictionary();
+
+        player.SendTunneled(coinStoreItemListPacket);
+
+        var clientItemDefinitions = new List<ClientItemDefinition>();
+
+        foreach (var coinStoreItem in _resourceManager.CoinStoreItems)
+        {
+            if (!_resourceManager.ClientItemDefinitions.TryGetValue(coinStoreItem.Key, out var clientItemDefinition))
+                continue;
+
+            clientItemDefinitions.Add(clientItemDefinition);
+        }
+
+        using var writer = new PacketWriter();
+
+        writer.Write(clientItemDefinitions);
+
+        var playerUpdatePacketItemDefinitions = new PlayerUpdatePacketItemDefinitions();
+
+        playerUpdatePacketItemDefinitions.Payload = writer.Buffer;
+
+        player.SendTunneled(playerUpdatePacketItemDefinitions);
     }
 
     private void SendAdventurersJournalInfo(Player player)
@@ -956,6 +1010,148 @@ public sealed class StartingZone : BaseZone
         ]);
 
         player.SendTunneled(packetLoadWelcomeScreen);
+    }
+
+    private void SendPlayerCustomizations(Player player)
+    {
+        var playerUpdatePacketCustomizationData = new PlayerUpdatePacketCustomizationData();
+
+        var customizations = new[]
+        {
+            new PlayerCustomizationData
+            {
+                Id = 0, // Head
+                Param = player.HeadId,
+                StringParam = player.Head
+            },
+            new PlayerCustomizationData
+            {
+                Id = 1, // Skin Tone
+                Param = player.SkinToneId,
+                StringParam = player.SkinTone
+            },
+            new PlayerCustomizationData
+            {
+                Id = 2, // Hair
+                Param = player.HairId,
+                StringParam = player.Hair
+            },
+            new PlayerCustomizationData
+            {
+                Id = 3, // Hair Color
+                Param = player.HairColor
+            },
+            new PlayerCustomizationData
+            {
+                Id = 4, // Eye Color
+                Param = player.EyeColor
+            },
+            new PlayerCustomizationData
+            {
+                Id = 5, // Model Customization
+                Param = player.ModelCustomizationId,
+                StringParam = player.ModelCustomization
+            },
+            new PlayerCustomizationData
+            {
+                Id = 6, // Face Paint
+                Param = player.FacePaintId,
+                StringParam = player.FacePaint
+            },
+            new PlayerCustomizationData
+            {
+                Id = 8, // Model
+                Param = player.Model
+            }
+        };
+
+        playerUpdatePacketCustomizationData.Customizations.AddRange(customizations);
+
+        player.SendTunneled(playerUpdatePacketCustomizationData);
+    }
+
+    private void SendMembershipSubscriptionInfo(Player player)
+    {
+        var packetMembershipSubscriptionInfo = new PacketMembershipSubscriptionInfo
+        {
+            IsMember = player.MembershipStatus != 0
+        };
+
+        player.SendTunneled(packetMembershipSubscriptionInfo);
+    }
+
+    private void SendInGamePurchase(Player player)
+    {
+        var packetInGamePurchaseEnableMarketplace = new PacketInGamePurchaseEnableMarketplace
+        {
+            Enabled = true
+        };
+
+        player.SendTunneled(packetInGamePurchaseEnableMarketplace);
+
+        var packetInGamePurchaseStoreEnablePaymentSources = new PacketInGamePurchaseStoreEnablePaymentSources
+        {
+            Sms = true,
+            Paypal = true
+        };
+
+        player.SendTunneled(packetInGamePurchaseStoreEnablePaymentSources);
+
+        var packetInGamePurchaseStoreBundleCategoryGroups = new PacketInGamePurchaseStoreBundleCategoryGroups();
+
+        packetInGamePurchaseStoreBundleCategoryGroups.CategoryGroups = _resourceManager.StoreBundleCategoryGroups.ToDictionary();
+
+        player.SendTunneled(packetInGamePurchaseStoreBundleCategoryGroups);
+
+        var packetInGamePurchaseStoreBundleCategories = new PacketInGamePurchaseStoreBundleCategories();
+
+        packetInGamePurchaseStoreBundleCategories.CategoryTree.Categories = _resourceManager.StoreBundleCategories.ToDictionary();
+
+        player.SendTunneled(packetInGamePurchaseStoreBundleCategories);
+
+        if (_resourceManager.Stores.TryGetValue(1, out var mainStore))
+        {
+            var packetInGamePurchaseStoreBundles = new PacketInGamePurchaseStoreBundles();
+
+            packetInGamePurchaseStoreBundles.StoreId = mainStore.Id;
+
+            packetInGamePurchaseStoreBundles.Store.Id = mainStore.Id;
+            packetInGamePurchaseStoreBundles.Store.NameId = mainStore.NameId;
+            packetInGamePurchaseStoreBundles.Store.DescriptionId = mainStore.DescriptionId;
+            packetInGamePurchaseStoreBundles.Store.Image = mainStore.Image;
+
+            foreach (var storeBundle in mainStore.Bundles.Values)
+            {
+                var valid = storeBundle.Entries.All(x => _resourceManager.ClientItemDefinitions.ContainsKey(x.MarketingItemId));
+
+                if (valid)
+                    packetInGamePurchaseStoreBundles.Store.Bundles.Add(storeBundle.Id, storeBundle);
+            }
+
+            player.SendTunneled(packetInGamePurchaseStoreBundles);
+        }
+
+        var packetInGamePurchaseStoreBundleGroups = new PacketInGamePurchaseStoreBundleGroups();
+
+        packetInGamePurchaseStoreBundleGroups.BundleGroups = _resourceManager.StoreBundleGroups.ToDictionary();
+
+        player.SendTunneled(packetInGamePurchaseStoreBundleGroups);
+
+        /* var inGamePurchaseUpdateSaleDisplay = new InGamePurchaseUpdateSaleDisplay();
+
+        inGamePurchaseUpdateSaleDisplay.Sales.Add(new SaleDisplayInfo
+        {
+            Id = 12951,
+            IconId = 7866,
+            TintId = 0,
+            TitleId = 824,
+            BodyId = 825,
+            SecondsLeft = 1000,
+            Unknown = 0,
+            IsMembership = false
+        });
+
+        player.SendTunneled(inGamePurchaseUpdateSaleDisplay); */
     }
 
     private void SendFriendList(Player player)

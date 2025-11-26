@@ -9,8 +9,8 @@ public sealed class DbUserConfiguration : IEntityTypeConfiguration<DbUser>
 {
     public void Configure(EntityTypeBuilder<DbUser> builder)
     {
-        builder.HasKey(u => u.Guid);
-        builder.Property(u => u.Guid).IsRequired().ValueGeneratedOnAdd();
+        builder.HasKey(u => u.Id);
+        builder.Property(u => u.Id).IsRequired().ValueGeneratedOnAdd();
 
         builder.HasIndex(u => u.Username).IsUnique();
         builder.Property(u => u.Username).IsRequired().HasMaxLength(254);
@@ -30,7 +30,7 @@ public sealed class DbUserConfiguration : IEntityTypeConfiguration<DbUser>
 
         builder.HasMany(u => u.Characters)
             .WithOne(c => c.User)
-            .HasForeignKey(c => c.UserGuid)
+            .HasForeignKey(c => c.UserId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

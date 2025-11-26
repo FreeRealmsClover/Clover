@@ -29,7 +29,7 @@ public class ItemClassDefinitionCollection : ObservableConcurrentDictionary<int,
 
         try
         {
-            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
 
             using var reader = Sep.New('^')
                 .Reader()

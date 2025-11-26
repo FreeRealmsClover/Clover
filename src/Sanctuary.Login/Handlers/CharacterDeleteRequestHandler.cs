@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common.Attributes;
@@ -37,7 +38,7 @@ public static class CharacterDeleteRequestHandler
 
         var characterDeleteReply = new CharacterDeleteReply();
 
-        if (connection.Guid == 0)
+        if (connection.UserId == 0)
         {
             characterDeleteReply.Status = 2;
 
@@ -48,7 +49,7 @@ public static class CharacterDeleteRequestHandler
 
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var character = dbContext.Characters.SingleOrDefault(x => x.UserGuid == connection.Guid && x.Guid == packet.EntityKey);
+        var character = dbContext.Characters.SingleOrDefault(x => x.UserId == connection.UserId && x.Id == GuidHelper.GetPlayerId(packet.EntityKey));
 
         if (character is null)
         {

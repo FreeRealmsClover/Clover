@@ -6,6 +6,9 @@ public class PacketMountInfo : ISerializableType
 {
     public int Id;
 
+    // Server side
+    public int Definition;
+
     public int NameId;
 
     public int ImageSetId;

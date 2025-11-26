@@ -28,6 +28,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{154489CF-2C20-41FD-96F0-7B5ABEBF3677}"
 	ProjectSection(SolutionItems) = preProject
 		Resources\ClientItemDefinitions.json = Resources\ClientItemDefinitions.json
+		Resources\CoinStoreItems.json = Resources\CoinStoreItems.json
 		Resources\ItemCategories.txt = Resources\ItemCategories.txt
 		Resources\ItemCategoryGroups.txt = Resources\ItemCategoryGroups.txt
 		Resources\ItemClasses.txt = Resources\ItemClasses.txt
@@ -37,6 +38,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Resources", "Resources", "{
 		Resources\PointOfInterests.json = Resources\PointOfInterests.json
 		Resources\Profiles.json = Resources\Profiles.json
 		Resources\QuickChats.json = Resources\QuickChats.json
+		Resources\StoreBundleCategories.json = Resources\StoreBundleCategories.json
+		Resources\StoreBundleCategoryGroups.json = Resources\StoreBundleCategoryGroups.json
+		Resources\StoreBundleGroups.json = Resources\StoreBundleGroups.json
+		Resources\StoreBundles.json = Resources\StoreBundles.json
+		Resources\Stores.json = Resources\Stores.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CharacterCreate", "CharacterCreate", "{1EDF85EE-E890-4D81-A821-E560AD396872}"

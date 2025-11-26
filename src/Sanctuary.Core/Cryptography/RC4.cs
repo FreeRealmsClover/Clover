@@ -9,10 +9,8 @@ public sealed class RC4
     private int x, y;
     private byte[] engineState;
 
-    public RC4(string key)
+    public RC4(byte[] key)
     {
-        var keyBytes = Convert.FromBase64String(key);
-
         engineState = new byte[StateLength];
 
         for (var i = 0; i < StateLength; i++)
@@ -23,7 +21,7 @@ public sealed class RC4
 
         for (var i = 0; i < StateLength; i++)
         {
-            i2 = ((keyBytes[i1] & 0xff) + engineState[i] + i2) & 0xff;
+            i2 = ((key[i1] & 0xff) + engineState[i] + i2) & 0xff;
 
             var tmp = engineState[i];
 
@@ -31,13 +29,13 @@ public sealed class RC4
 
             engineState[i2] = tmp;
 
-            i1 = (i1 + 1) % keyBytes.Length;
+            i1 = (i1 + 1) % key.Length;
         }
     }
 
-    public void Apply(Span<byte> data)
+    public void Apply(Span<byte> sourceData, Span<byte> destData)
     {
-        for (var i = 0; i < data.Length; i++)
+        for (var i = 0; i < sourceData.Length; i++)
         {
             x = (x + 1) & 0xff;
             y = (engineState[x] + y) & 0xff;
@@ -48,7 +46,7 @@ public sealed class RC4
             engineState[x] = sy;
             engineState[y] = sx;
 
-            data[i] ^= engineState[(sx + sy) & 0xff];
+            destData[i] = (byte)(sourceData[i] ^ engineState[(sx + sy) & 0xff]);
         }
     }
 }

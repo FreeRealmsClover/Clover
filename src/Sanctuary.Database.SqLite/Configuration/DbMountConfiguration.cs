@@ -9,11 +9,14 @@ public sealed class DbMountConfiguration : IEntityTypeConfiguration<DbMount>
 {
     public void Configure(EntityTypeBuilder<DbMount> builder)
     {
-        builder.HasKey(p => new { p.Id, p.CharacterGuid });
-        builder.Property(p => p.Id).IsRequired().ValueGeneratedNever();
+        builder.HasKey(m => new { m.Id, m.CharacterId });
+        builder.Property(m => m.Id).IsRequired().ValueGeneratedNever();
+        builder.HasIndex(m => new { m.Tint, m.Definition, m.CharacterId }).IsUnique();
 
-        builder.Property(p => p.IsUpgraded).IsRequired();
+        builder.Property(m => m.Tint).IsRequired();
+        builder.Property(m => m.Definition).IsRequired();
+        builder.Property(m => m.IsUpgraded).IsRequired();
 
-        builder.Property(i => i.Created).IsRequired().HasDefaultValueSql("DATE()");
+        builder.Property(m => m.Created).IsRequired().HasDefaultValueSql("DATE()");
     }
 }

@@ -17,7 +17,7 @@ namespace Sanctuary.Database.MySql.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.7")
+                .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -27,29 +27,29 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("ItemsId")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("ItemsCharacterGuid")
+                    b.Property<ulong>("ItemsCharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<int>("ProfilesId")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("ProfilesCharacterGuid")
+                    b.Property<ulong>("ProfilesCharacterId")
                         .HasColumnType("bigint unsigned");
 
-                    b.HasKey("ItemsId", "ItemsCharacterGuid", "ProfilesId", "ProfilesCharacterGuid");
+                    b.HasKey("ItemsId", "ItemsCharacterId", "ProfilesId", "ProfilesCharacterId");
 
-                    b.HasIndex("ProfilesId", "ProfilesCharacterGuid");
+                    b.HasIndex("ProfilesId", "ProfilesCharacterId");
 
                     b.ToTable("ProfileItems", (string)null);
                 });
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbCharacter", b =>
                 {
-                    b.Property<ulong>("Guid")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint unsigned");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Guid"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
 
                     b.Property<int>("ActiveProfileId")
                         .HasColumnType("int");
@@ -72,6 +72,9 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
+                    b.Property<int>("Coins")
+                        .HasColumnType("int");
+
                     b.Property<DateTimeOffset>("Created")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime(6)")
@@ -82,6 +85,9 @@ namespace Sanctuary.Database.MySql.Migrations
 
                     b.Property<string>("FacePaint")
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("FacePaintId")
+                        .HasColumnType("int");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -104,9 +110,15 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("HairColor")
                         .HasColumnType("int");
 
+                    b.Property<int>("HairId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Head")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int>("HeadId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("LastLogin")
                         .HasColumnType("datetime(6)");
@@ -123,6 +135,9 @@ namespace Sanctuary.Database.MySql.Migrations
 
                     b.Property<string>("ModelCustomization")
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("ModelCustomizationId")
+                        .HasColumnType("int");
 
                     b.Property<float?>("PositionX")
                         .HasColumnType("float");
@@ -143,28 +158,34 @@ namespace Sanctuary.Database.MySql.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<int>("SkinToneId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StationCash")
+                        .HasColumnType("int");
+
                     b.Property<Guid?>("Ticket")
                         .HasColumnType("char(36)");
 
-                    b.Property<ulong>("UserGuid")
+                    b.Property<ulong>("UserId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<float>("VipRank")
                         .HasColumnType("float");
 
-                    b.HasKey("Guid");
+                    b.HasKey("Id");
 
-                    b.HasIndex("UserGuid");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Characters");
                 });
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbFriend", b =>
                 {
-                    b.Property<ulong>("FriendCharacterGuid")
+                    b.Property<ulong>("FriendCharacterId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<DateTimeOffset>("Created")
@@ -172,19 +193,19 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("NOW()");
 
-                    b.HasKey("FriendCharacterGuid", "CharacterGuid");
+                    b.HasKey("FriendCharacterId", "CharacterId");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("Friends");
                 });
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbIgnore", b =>
                 {
-                    b.Property<ulong>("IgnoreCharacterGuid")
+                    b.Property<ulong>("IgnoreCharacterId")
                         .HasColumnType("bigint unsigned");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<DateTimeOffset>("Created")
@@ -192,9 +213,9 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("NOW()");
 
-                    b.HasKey("IgnoreCharacterGuid", "CharacterGuid");
+                    b.HasKey("IgnoreCharacterId", "CharacterId");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("Ignores");
                 });
@@ -204,13 +225,11 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Count")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasDefaultValue(1);
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset>("Created")
                         .ValueGeneratedOnAdd()
@@ -223,11 +242,11 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Tint")
                         .HasColumnType("int");
 
-                    b.HasKey("Id", "CharacterGuid");
+                    b.HasKey("Id", "CharacterId");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasIndex("CharacterId");
 
-                    b.HasIndex("Tint", "Definition", "CharacterGuid")
+                    b.HasIndex("Tint", "Definition", "CharacterId")
                         .IsUnique();
 
                     b.ToTable("Items");
@@ -238,7 +257,7 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<DateTimeOffset>("Created")
@@ -246,12 +265,21 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasColumnType("datetime(6)")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<int>("Definition")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsUpgraded")
                         .HasColumnType("tinyint(1)");
 
-                    b.HasKey("Id", "CharacterGuid");
+                    b.Property<int>("Tint")
+                        .HasColumnType("int");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasKey("Id", "CharacterId");
+
+                    b.HasIndex("CharacterId");
+
+                    b.HasIndex("Tint", "Definition", "CharacterId")
+                        .IsUnique();
 
                     b.ToTable("Mounts");
                 });
@@ -261,7 +289,7 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
                     b.Property<int>("Level")
@@ -270,9 +298,9 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("LevelXP")
                         .HasColumnType("int");
 
-                    b.HasKey("Id", "CharacterGuid");
+                    b.HasKey("Id", "CharacterId");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("Profiles");
                 });
@@ -282,23 +310,23 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Id")
                         .HasColumnType("int");
 
-                    b.Property<ulong>("CharacterGuid")
+                    b.Property<ulong>("CharacterId")
                         .HasColumnType("bigint unsigned");
 
-                    b.HasKey("Id", "CharacterGuid");
+                    b.HasKey("Id", "CharacterId");
 
-                    b.HasIndex("CharacterGuid");
+                    b.HasIndex("CharacterId");
 
                     b.ToTable("Titles");
                 });
 
             modelBuilder.Entity("Sanctuary.Database.Entities.DbUser", b =>
                 {
-                    b.Property<ulong>("Guid")
+                    b.Property<ulong>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bigint unsigned");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Guid"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<ulong>("Id"));
 
                     b.Property<DateTimeOffset>("Created")
                         .ValueGeneratedOnAdd()
@@ -345,7 +373,7 @@ namespace Sanctuary.Database.MySql.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("varchar(254)");
 
-                    b.HasKey("Guid");
+                    b.HasKey("Id");
 
                     b.HasIndex("Username")
                         .IsUnique();
@@ -357,13 +385,13 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbItem", null)
                         .WithMany()
-                        .HasForeignKey("ItemsId", "ItemsCharacterGuid")
+                        .HasForeignKey("ItemsId", "ItemsCharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Sanctuary.Database.Entities.DbProfile", null)
                         .WithMany()
-                        .HasForeignKey("ProfilesId", "ProfilesCharacterGuid")
+                        .HasForeignKey("ProfilesId", "ProfilesCharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -372,7 +400,7 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbUser", "User")
                         .WithMany("Characters")
-                        .HasForeignKey("UserGuid")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -383,13 +411,13 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Friends")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "FriendCharacter")
                         .WithMany()
-                        .HasForeignKey("FriendCharacterGuid")
+                        .HasForeignKey("FriendCharacterId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -402,13 +430,13 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Ignores")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "IgnoreCharacter")
                         .WithMany()
-                        .HasForeignKey("IgnoreCharacterGuid")
+                        .HasForeignKey("IgnoreCharacterId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
@@ -421,7 +449,7 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Items")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -432,7 +460,7 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Mounts")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -443,7 +471,7 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Profiles")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -454,7 +482,7 @@ namespace Sanctuary.Database.MySql.Migrations
                 {
                     b.HasOne("Sanctuary.Database.Entities.DbCharacter", "Character")
                         .WithMany("Titles")
-                        .HasForeignKey("CharacterGuid")
+                        .HasForeignKey("CharacterId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

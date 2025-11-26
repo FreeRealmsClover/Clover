@@ -30,9 +30,13 @@ public class ClientItemDefinitionCollection : ObservableConcurrentDictionary<int
         try
         {
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var streamReader = new StreamReader(fileStream);
 
-            var entries = JsonSerializer.Deserialize<List<ClientItemDefinition>>(streamReader.ReadToEnd());
+            var jsonSerializerOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            var entries = JsonSerializer.Deserialize<List<ClientItemDefinition>>(fileStream, jsonSerializerOptions);
 
             if (entries is null)
             {

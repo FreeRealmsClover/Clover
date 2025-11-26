@@ -6,9 +6,9 @@ public class DbFriend
 {
     public DateTimeOffset Created { get; set; } = DateTimeOffset.UtcNow;
 
-    public ulong FriendCharacterGuid { get; set; }
+    public ulong FriendCharacterId { get; set; }
     public DbCharacter FriendCharacter { get; set; } = null!;
 
-    public ulong CharacterGuid { get; set; }
+    public ulong CharacterId { get; set; }
     public DbCharacter Character { get; set; } = null!;
 }

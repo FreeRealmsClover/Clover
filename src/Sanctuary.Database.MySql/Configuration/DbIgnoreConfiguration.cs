@@ -9,13 +9,13 @@ public sealed class DbIgnoreConfiguration : IEntityTypeConfiguration<DbIgnore>
 {
     public void Configure(EntityTypeBuilder<DbIgnore> builder)
     {
-        builder.HasKey(i => new { i.IgnoreCharacterGuid, i.CharacterGuid });
+        builder.HasKey(i => new { i.IgnoreCharacterId, i.CharacterId });
 
         builder.Property(i => i.Created).IsRequired().HasDefaultValueSql("NOW()");
 
         builder.HasOne(i => i.IgnoreCharacter)
             .WithMany()
-            .HasForeignKey(f => f.IgnoreCharacterGuid)
+            .HasForeignKey(f => f.IgnoreCharacterId)
             .OnDelete(DeleteBehavior.NoAction);
     }
 }

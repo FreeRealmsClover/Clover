@@ -9,7 +9,7 @@ public sealed class DbProfileConfiguration : IEntityTypeConfiguration<DbProfile>
 {
     public void Configure(EntityTypeBuilder<DbProfile> builder)
     {
-        builder.HasKey(p => new { p.Id, p.CharacterGuid });
+        builder.HasKey(p => new { p.Id, p.CharacterId });
         builder.Property(p => p.Id).IsRequired().ValueGeneratedNever();
 
         builder.Property(p => p.Level).IsRequired();

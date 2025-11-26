@@ -40,16 +40,27 @@ public static class PacketMountSpawnHandler
         if (mountInfo is null)
             return true;
 
-        if (!_resourceManager.Mounts.TryGetValue(packet.Id, out var mountDefinition))
-            return true;
+        SpawnMount(connection, mountInfo);
+
+        return true;
+    }
+
+    public static void SpawnMount(GatewayConnection connection, PacketMountInfo mountInfo)
+    {
+        if (!_resourceManager.Mounts.TryGetValue(mountInfo.Definition, out var mountDefinition))
+            return;
 
         if (!connection.Player.Zone.TryCreateMount(connection.Player, mountDefinition, out var mount))
-            return true;
+            return;
 
         mount.Visible = true;
 
         mount.NameId = mountDefinition.NameId;
         mount.ModelId = mountDefinition.ModelId;
+
+        mount.TextureAlias = mountDefinition.TextureAlias;
+        mount.TintAlias = mountDefinition.TintAlias;
+        mount.TintId = mountInfo.TintId;
 
         mount.Scale = 1f;
         mount.Disposition = 1;
@@ -84,8 +95,7 @@ public static class PacketMountSpawnHandler
 
         var mountStats = mountDefinition.Stats;
 
-        // TODO: Check if the mount was upgraded
-        if (mountDefinition.IsUpgradable /* && dbMount.IsUpgraded */)
+        if (mountDefinition.IsUpgradable && mountInfo.IsUpgraded)
         {
             mountStats.MaxMovementSpeed = 12.5f;
 
@@ -110,7 +120,5 @@ public static class PacketMountSpawnHandler
             CharacterStats.GlideAccel.Set(mountStats.GlideAccel),
 
             CharacterStats.JumpHeight.Set(mountStats.JumpHeight));
-
-        return true;
     }
 }

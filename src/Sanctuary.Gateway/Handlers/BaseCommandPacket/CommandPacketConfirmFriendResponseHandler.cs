@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.Game;
@@ -81,20 +82,20 @@ public static class CommandPacketConfirmFriendResponseHandler
     {
         using var dbContext = _dbContextFactory.CreateDbContext();
 
-        var inviterDbCharacter = dbContext.Characters.SingleOrDefault(x => x.Guid == inviter.Guid);
-        var inviteeDbCharacter = dbContext.Characters.SingleOrDefault(x => x.Guid == invitee.Guid);
+        var inviterDbCharacter = dbContext.Characters.SingleOrDefault(x => x.Id == GuidHelper.GetPlayerId(inviter.Guid));
+        var inviteeDbCharacter = dbContext.Characters.SingleOrDefault(x => x.Id == GuidHelper.GetPlayerId(invitee.Guid));
 
         if (inviterDbCharacter is null || inviteeDbCharacter is null)
             return;
 
         inviterDbCharacter.Friends.Add(new DbFriend
         {
-            FriendCharacterGuid = invitee.Guid
+            FriendCharacterId = inviteeDbCharacter.Id
         });
 
         inviteeDbCharacter.Friends.Add(new DbFriend
         {
-            FriendCharacterGuid = inviter.Guid
+            FriendCharacterId = inviterDbCharacter.Id
         });
 
         if (dbContext.SaveChanges() <= 0)

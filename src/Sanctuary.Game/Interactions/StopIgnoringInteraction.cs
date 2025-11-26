@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 
+using Sanctuary.Core.Helpers;
 using Sanctuary.Database;
 using Sanctuary.Game.Entities;
 using Sanctuary.Packet;
@@ -35,8 +36,9 @@ public class StopIgnoringInteraction : IInteraction
         using var dbContext = _dbContextFactory.CreateDbContext();
 
         var dbIgnoreToRemove = dbContext.Ignores.Where(x =>
-                x.CharacterGuid == player.Guid &&
-                x.IgnoreCharacterGuid == otherPlayer.Guid);
+                x.CharacterId == GuidHelper.GetPlayerId(player.Guid) &&
+                x.IgnoreCharacterId == GuidHelper.GetPlayerId(otherPlayer.Guid));
+
         if (dbIgnoreToRemove.ExecuteDelete() <= 0)
             return;
 

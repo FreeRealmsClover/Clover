@@ -5,7 +5,7 @@ namespace Sanctuary.Database.Entities;
 
 public class DbCharacter
 {
-    public ulong Guid { get; set; }
+    public ulong Id { get; set; }
 
     public Guid? Ticket { get; set; }
 
@@ -14,11 +14,22 @@ public class DbCharacter
     public string? FullName { get; set; }
 
     public int Model { get; set; }
+
     public required string Head { get; set; }
+    public required int HeadId { get; set; }
+
     public required string Hair { get; set; }
+    public required int HairId { get; set; }
+
     public string? ModelCustomization { get; set; }
+    public int? ModelCustomizationId { get; set; }
+
     public string? FacePaint { get; set; }
+    public int? FacePaintId { get; set; }
+
     public required string SkinTone { get; set; }
+    public required int SkinToneId { get; set; }
+
     public int EyeColor { get; set; }
     public int HairColor { get; set; }
 
@@ -41,6 +52,9 @@ public class DbCharacter
     public int ChatBubbleBackgroundColor { get; set; } = 0xD4E2F0;
     public int ChatBubbleSize { get; set; } = 1;
 
+    public int Coins { get; set; }
+    public int StationCash { get; set; }
+
     public DateTimeOffset Created { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastLogin { get; set; }
 
@@ -51,6 +65,6 @@ public class DbCharacter
     public ICollection<DbIgnore> Ignores { get; set; } = new HashSet<DbIgnore>();
     public ICollection<DbProfile> Profiles { get; set; } = new HashSet<DbProfile>();
 
-    public ulong UserGuid { get; set; }
+    public ulong UserId { get; set; }
     public DbUser User { get; set; } = null!;
 }

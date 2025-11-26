@@ -46,11 +46,11 @@ public static class LoginRequestHandler
         var loginReply = new LoginReply();
 
         // Have we already logged-in?
-        if (connection.Guid > 0)
+        if (connection.UserId > 0)
         {
             connection.Send(loginReply);
 
-            _logger.LogWarning("User tried to login twice. ( Guid: {guid}, Session: {session} )", connection.Guid, packet.Session);
+            _logger.LogWarning("User tried to login twice. ( UserId: {UserId}, Session: {session} )", connection.UserId, packet.Session);
 
             return true;
         }
@@ -104,7 +104,7 @@ public static class LoginRequestHandler
             return true;
         }
 
-        connection.Guid = user.Guid;
+        connection.UserId = user.Id;
 
         loginReply.LoggedIn = true;
         loginReply.Status = 1;
