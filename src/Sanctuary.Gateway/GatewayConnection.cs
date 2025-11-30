@@ -113,10 +113,12 @@ public class GatewayConnection : UdpConnection
             _ => false
         };
 
+#if DEBUG
         if (!handled)
         {
             _logger.LogWarning("{connection} received an unhandled packet. ( OpCode: {opcode}, Data: {data} )", this, opCode, Convert.ToHexString(data));
         }
+#endif
     }
 
     public override void OnCrcReject(Span<byte> data)

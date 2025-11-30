@@ -64,10 +64,12 @@ public class LoginConnection : UdpConnection
             _ => false
         };
 
+#if DEBUG
         if (!handled)
         {
             _logger.LogWarning("{connection} received an unhandled packet. ( OpCode: {opcode}, Data: {data} )", this, opCode, Convert.ToHexString(data));
         }
+#endif
     }
 
     public void Send(ISerializablePacket packet)

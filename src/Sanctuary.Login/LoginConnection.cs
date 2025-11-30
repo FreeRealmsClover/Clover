@@ -83,15 +83,15 @@ public class LoginConnection : UdpConnection
             _ => false
         };
 
+#if DEBUG
         if (!handled)
         {
-#if DEBUG
             reader.Reset();
             System.Diagnostics.Debug.WriteLine(reader.ReadExternalLoginPacketName());
-#endif
 
             _logger.LogWarning("{connection} received an unhandled packet. ( OpCode: {opcode}, Data: {data} )", this, opCode, Convert.ToHexString(data));
         }
+#endif
     }
 
     public override void OnCrcReject(Span<byte> data)
