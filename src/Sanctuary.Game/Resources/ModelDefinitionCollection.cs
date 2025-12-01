@@ -53,7 +53,7 @@ public class ModelDefinitionCollection : ObservableConcurrentDictionary<int, Mod
                 if (!int.TryParse(row[column++].Span, out modelDefinition.RaceId))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.Scale))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.Scale))
                     continue;
 
                 modelDefinition.Description = row[column++].ToString();
@@ -69,16 +69,16 @@ public class ModelDefinitionCollection : ObservableConcurrentDictionary<int, Mod
                 if (!int.TryParse(row[column++].Span, out modelDefinition.MaterialType))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.WaterDisplacement))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.WaterDisplacement))
                     continue;
 
                 if (!int.TryParse(row[column++].Span, out modelDefinition.TeleportEffectId))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.CameraDistance))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.CameraDistance))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.CameraAngle))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.CameraAngle))
                     continue;
 
                 if (!int.TryParse(row[column++].Span, out var isValidForPC))
@@ -86,13 +86,13 @@ public class ModelDefinitionCollection : ObservableConcurrentDictionary<int, Mod
 
                 modelDefinition.IsValidForPC = isValidForPC != 0;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.NamePlateOffset))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.NamePlateOffset))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.CapsuleHeight))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.CapsuleHeight))
                     continue;
 
-                if (!float.TryParse(row[column++].Span, CultureInfo.InvariantCulture, out modelDefinition.Radius))
+                if (!float.TryParse(row[column++].Span, out modelDefinition.Radius))
                     continue;
 
                 if (!TryAdd(modelDefinition.Id, modelDefinition))
