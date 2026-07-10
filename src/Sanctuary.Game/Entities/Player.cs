@@ -149,6 +149,8 @@ public sealed class Player : ClientPcData, IEntity
         Position = position;
         Rotation = rotation;
 
+        Mount?.UpdatePosition(position, rotation, updateZoneArea);
+
         if (Visible)
         {
             UpdateZoneTile();
@@ -279,12 +281,10 @@ public sealed class Player : ClientPcData, IEntity
     {
         foreach (var npc in npcs)
         {
-            var playerUpdatePacketAddNpc = npc.GetAddNpcPacket();
+            if (npc is Mount)
+                continue;
 
-            if (npc is Mount mount && mount.Rider.Guid == Guid)
-                playerUpdatePacketAddNpc.RiderGuid = 0;
-
-            SendTunneled(playerUpdatePacketAddNpc);
+            SendTunneled(npc.GetAddNpcPacket());
         }
 
         var playerUpdatePacketNpcRelevance = new PlayerUpdatePacketNpcRelevance();
@@ -326,9 +326,20 @@ public sealed class Player : ClientPcData, IEntity
     {
         foreach (var player in players)
         {
-            var playerUpdatePacketAddPc = player.GetAddPcPacket();
+            if (player.Mount is not null)
+            {
+                var addPc = player.GetAddPcPacket();
+                addPc.MountGuid = 0;
+                addPc.MountSeat = -1;
+                addPc.MountQueuePosition = -1;
+                addPc.NameVerticalOffset = 0;
 
-            SendTunneled(playerUpdatePacketAddPc);
+                SendTunneled(addPc);
+                SendTunneled(player.Mount.GetAddNpcPacket());
+                SendTunneled(player.Mount.GetMountResponsePacket());
+            }
+            else
+                SendTunneled(player.GetAddPcPacket());
         }
 
         foreach (var player in players)
@@ -339,28 +350,10 @@ public sealed class Player : ClientPcData, IEntity
     {
         foreach (var npc in npcs)
         {
-            if (npc is Mount mount)
-            {
-                var playerUpdatePacketRemovePlayerGracefully = new PlayerUpdatePacketRemovePlayerGracefully();
+            if (npc is Mount)
+                continue;
 
-                playerUpdatePacketRemovePlayerGracefully.Guid = npc.Guid;
-
-                playerUpdatePacketRemovePlayerGracefully.Animate = false;
-                playerUpdatePacketRemovePlayerGracefully.Delay = 0;
-                playerUpdatePacketRemovePlayerGracefully.EffectDelay = 0;
-                playerUpdatePacketRemovePlayerGracefully.CompositeEffectId = 46;
-                playerUpdatePacketRemovePlayerGracefully.Duration = 1000;
-
-                SendTunneled(playerUpdatePacketRemovePlayerGracefully);
-            }
-            else
-            {
-                var playerUpdatePacketRemovePlayer = new PlayerUpdatePacketRemovePlayer();
-
-                playerUpdatePacketRemovePlayer.Guid = npc.Guid;
-
-                SendTunneled(playerUpdatePacketRemovePlayer);
-            }
+            SendTunneled(new PlayerUpdatePacketRemovePlayer { Guid = npc.Guid });
         }
 
         foreach (var npc in npcs)
@@ -371,11 +364,10 @@ public sealed class Player : ClientPcData, IEntity
     {
         foreach (var player in players)
         {
-            var playerUpdatePacketRemovePlayer = new PlayerUpdatePacketRemovePlayer();
+            SendTunneled(new PlayerUpdatePacketRemovePlayer { Guid = player.Guid });
 
-            playerUpdatePacketRemovePlayer.Guid = player.Guid;
-
-            SendTunneled(playerUpdatePacketRemovePlayer);
+            if (player.Mount is not null)
+                SendTunneled(new PlayerUpdatePacketRemovePlayer { Guid = player.Mount.Guid });
         }
 
         foreach (var player in players)
@@ -577,14 +569,13 @@ public sealed class Player : ClientPcData, IEntity
 
     public void Dispose()
     {
-        Mount?.Dispose();
-        Mount = null;
-
         foreach (var visiblePlayer in VisiblePlayers)
             visiblePlayer.Value.OnRemoveVisiblePlayers([this]);
 
-        ZoneTile.Entities.Remove(Guid, out _);
+        Mount?.Dispose();
+        Mount = null;
 
+        ZoneTile.Entities.Remove(Guid, out _);
         Zone.TryRemovePlayer(Guid);
     }
 }
