@@ -49,6 +49,9 @@ public static class InventoryPacketItemActionBarAssignHandler
             connection.Player.ActionBars[2] = new Packet.Common.ClientActionBar { Id = 2 };
         }
 
+        // Cancel any previously scheduled slot packet for this action bar and slot since it's being reassigned
+        connection.Player.CancelScheduledSlotPacket(2, packet.Slot);
+
         if (packet.Guid == 0)
         {
             clientUpdatePacketUpdateActionBarSlot.Slot.IsEmpty = true;
