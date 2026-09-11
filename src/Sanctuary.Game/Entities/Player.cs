@@ -81,7 +81,8 @@ public sealed class Player : ClientPcData, IEntity
     public void StartItemCooldown(int itemDefinitionId, int cooldownMs) =>
         _itemCooldowns[itemDefinitionId] = DateTimeOffset.UtcNow.AddMilliseconds(cooldownMs);
 
-    private readonly ConcurrentQueue<(DateTimeOffset SendAt, ISerializablePacket Packet, bool SendToSelf)> _delayedPackets = new();
+    // Min-heap ordered by send time
+    private readonly PriorityQueue<(ISerializablePacket Packet, bool SendToSelf), DateTimeOffset> _delayedPackets = new();
 
     // One scheduled personal-UI packet per action bar slot (the cooldown re-enable) - keyed, not queued,
     // so a slot that gets emptied before its cooldown naturally expires (last item consumed) can cancel
@@ -160,7 +161,10 @@ public sealed class Player : ClientPcData, IEntity
 
     public void SendTunneledToVisibleDelayed(ISerializablePacket packet, int delayMs, bool sendToSelf = false)
     {
-        _delayedPackets.Enqueue((DateTimeOffset.UtcNow.AddMilliseconds(delayMs), packet, sendToSelf));
+        lock (_delayedPackets)
+        {
+            _delayedPackets.Enqueue((packet, sendToSelf), DateTimeOffset.UtcNow.AddMilliseconds(delayMs));
+        }
     }
 
     public bool IsMuted()
@@ -211,19 +215,29 @@ public sealed class Player : ClientPcData, IEntity
 
     public void UpdateEveryTick()
     {
+        var now = DateTimeOffset.UtcNow;
+
         if (TemporaryAppearanceExpiresAt.HasValue &&
-            TemporaryAppearanceExpiresAt.Value <= DateTimeOffset.UtcNow)
+            TemporaryAppearanceExpiresAt.Value <= now)
         {
             RemoveTemporaryAppearance();
         }
 
-        while (_delayedPackets.TryPeek(out var delayed) && delayed.SendAt <= DateTimeOffset.UtcNow)
+        while (true)
         {
-            if (_delayedPackets.TryDequeue(out delayed))
-                SendTunneledToVisible(delayed.Packet, delayed.SendToSelf);
+            (ISerializablePacket Packet, bool SendToSelf) due;
+
+            lock (_delayedPackets)
+            {
+                if (!_delayedPackets.TryPeek(out _, out var sendAt) || sendAt > now)
+                    break; // none or none ready
+
+                due = _delayedPackets.Dequeue();
+            }
+
+            SendTunneledToVisible(due.Packet, due.SendToSelf);
         }
 
-        var now = DateTimeOffset.UtcNow;
         foreach (var (key, scheduled) in _delayedSlotPackets)
         {
             if (scheduled.SendAt > now)
@@ -238,7 +252,7 @@ public sealed class Player : ClientPcData, IEntity
     {
     }
 
-    // Live-confirmed (2026-07-31): the client animates the cooldown sweep itself from TotalRefreshTime -
+    // The client animates the cooldown sweep itself from TotalRefreshTime -
     // no per-second resend needed for that. But it does NOT re-enable the slot for input on its own once
     // the sweep finishes ("sweep animates but after the sweep I cannot use the ability again") - that
     // needs one explicit packet once the cooldown is actually over. So: one packet now, one packet
