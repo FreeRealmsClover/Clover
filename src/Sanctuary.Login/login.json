@@ -3,7 +3,7 @@
     "Port": 20042,
 
     "LoginGatewayPort": 20041,
-    "LoginGatewayChallenge": "OSFR-EDITz@2024",
+    "LoginGatewayChallenge": "set-via-LOGIN_GATEWAY_CHALLENGE-env-var",
 
     "IsLocked": false,
 
