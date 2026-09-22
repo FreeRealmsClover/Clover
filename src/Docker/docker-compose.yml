@@ -4,12 +4,14 @@ services:
     container_name: sanctuary.mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-sanctuary}
       MYSQL_USER: ${MYSQL_USER:-sanctuary}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-sanctuary}
-    ports:
-      - "3306:3306"
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    # No public port mapping - only reachable over the internal docker
+    # network by the other services. Use `docker compose exec sanctuary.mysql
+    # mariadb -uroot -p` for local admin access, or a temporary SSH tunnel
+    # if you need a GUI client.
     volumes:
       - db:/var/lib/mysql
     healthcheck:
@@ -35,9 +37,10 @@ services:
     environment: &common-env
       - Database__Provider=0 # MySql (MariaDB uses the same provider)
       - Database__VersionString=10.5.29-mariadb
-      - Database__ConnectionString=Server=sanctuary.mysql;Port=3306;Database=${MYSQL_DATABASE:-sanctuary};User=${MYSQL_USER:-sanctuary};Password=${MYSQL_PASSWORD:-sanctuary};
+      - Database__ConnectionString=Server=sanctuary.mysql;Port=3306;Database=${MYSQL_DATABASE:-sanctuary};User=${MYSQL_USER:-sanctuary};Password=${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env};
       - Server__LoginGatewayAddress=sanctuary.login:20041
       - Server__ServerAddress=40.160.90.7:20260
+      - Server__LoginGatewayChallenge=${LOGIN_GATEWAY_CHALLENGE:?Set LOGIN_GATEWAY_CHALLENGE in .env}
       - Urls=http://0.0.0.0:20040
     depends_on:
       sanctuary.mysql:
