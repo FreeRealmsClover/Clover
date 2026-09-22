@@ -48,7 +48,8 @@ builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 builder.Services.AddHttpLogging(logging =>
 {
-    logging.LoggingFields = HttpLoggingFields.All;
+    // Bodies carry passwords and session IDs, so they are never logged.
+    logging.LoggingFields = HttpLoggingFields.All & ~(HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody);
 });
 
 #endif

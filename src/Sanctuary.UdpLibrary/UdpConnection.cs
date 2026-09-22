@@ -1913,6 +1913,32 @@ public class UdpConnection : PriorityQueueMember
 
     #endregion
 
+    /// <summary>
+    /// Acquires the connection's mutation guard for a bounded cross-player operation.
+    /// The returned lease must be disposed on the thread that acquired it.
+    /// </summary>
+    public bool TryAcquireMutationGuard(TimeSpan timeout, out IDisposable? lease)
+    {
+        if (!_guard.TryEnter(timeout))
+        {
+            lease = null;
+            return false;
+        }
+
+        lease = new MutationGuardLease(_guard);
+        return true;
+    }
+
+    private sealed class MutationGuardLease(Lock guard) : IDisposable
+    {
+        private Lock? _guard = guard;
+
+        public void Dispose()
+        {
+            Interlocked.Exchange(ref _guard, null)?.Exit();
+        }
+    }
+
     public override string ToString()
     {
         return EndPoint.ToString();

@@ -10,6 +10,12 @@ public sealed class DbUser
     public required string Username { get; set; }
     public required string Password { get; set; }
 
+    // Nullable so the migration adding this column doesn't break on rows
+    // registered before Email existed. New registrations always set it
+    // (enforced by RegisterRequestModel), so in practice this is only ever
+    // null for pre-existing accounts.
+    public string? Email { get; set; }
+
     public string? Session { get; set; }
     public DateTimeOffset? SessionCreated { get; set; }
 

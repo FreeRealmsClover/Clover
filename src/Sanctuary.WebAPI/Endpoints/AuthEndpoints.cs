@@ -32,6 +32,8 @@ public static class AuthEndpoints
 
         app.MapPost("/login", LoginHandlerAsync);
         app.MapPost("/register", RegisterHandlerAsync);
+        app.MapGet("/register/username-available", UsernameAvailableHandlerAsync);
+        app.MapGet("/register/email-available", EmailAvailableHandlerAsync);
     }
 
     private static async Task<IResult> LoginHandlerAsync(
@@ -95,7 +97,16 @@ public static class AuthEndpoints
         {
             _logger.LogWarning("Registration failed, username already taken {Username}", request.Username);
 
-            return Results.Conflict();
+            return Results.Text("Username is already in use.", statusCode: StatusCodes.Status409Conflict);
+        }
+
+        var emailTaken = await dbContext.Users.AnyAsync(x => x.Email == request.Email, cancellationToken);
+
+        if (emailTaken)
+        {
+            _logger.LogWarning("Registration failed, email already in use {Email}", request.Email);
+
+            return Results.Text("Email is already in use.", statusCode: StatusCodes.Status409Conflict);
         }
 
         var salt = BC.GenerateSalt();
@@ -105,6 +116,7 @@ public static class AuthEndpoints
         {
             Username = request.Username,
             Password = hashedPassword,
+            Email = request.Email,
             IsMember = webAPIOptions.Value.MemberByDefault ?? true,
         };
 
@@ -118,5 +130,41 @@ public static class AuthEndpoints
         }
 
         return Results.Ok();
+    }
+
+    // Lightweight "is this taken" checks used for as-you-type feedback on
+    // the registration form, before a real /register submission ever
+    // happens. Deliberately doesn't reuse MiniValidator/RegisterRequestModel
+    // - an empty or malformed value here just isn't available rather than a
+    // validation error, since the form itself still enforces the real
+    // format rules before submit.
+    private static async Task<IResult> UsernameAvailableHandlerAsync(
+        string? username,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Results.Ok(new { available = false });
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var taken = await dbContext.Users.AnyAsync(x => x.Username == username, cancellationToken);
+
+        return Results.Ok(new { available = !taken });
+    }
+
+    private static async Task<IResult> EmailAvailableHandlerAsync(
+        string? email,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return Results.Ok(new { available = false });
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var taken = await dbContext.Users.AnyAsync(x => x.Email == email, cancellationToken);
+
+        return Results.Ok(new { available = !taken });
     }
 }

@@ -9,8 +9,7 @@ namespace Sanctuary.Gateway.Helpers.Abilities;
 // lives here rather than being repeated by the catch-all.
 public sealed class FoodEffectAbility(AbilityServices services) : ConsumableAbility(services)
 {
-    private const int FoodEffectDurationMs = 30 * 60 * 1000;
-    private const int FoodEffectCooldownMs = 30 * 60 * 1000;
+    private const int FoodEffectCooldownMs = 1_800_000;
 
     public override bool Matches(ClientItemDefinition itemDefinition) =>
         _resourceManager.Consumables.FoodEffects.ContainsKey(itemDefinition.ActivatableAbilityId);
@@ -20,7 +19,7 @@ public sealed class FoodEffectAbility(AbilityServices services) : ConsumableAbil
         if (player.IsItemOnCooldown(itemDefinition.Id))
             return SendFailure(player);
 
-        player.StartItemCooldown(itemDefinition.Id, FoodEffectCooldownMs);
+        player.StartItemCooldown(itemDefinition.Id, ClampCooldown(FoodEffectCooldownMs));
 
         _resourceManager.Consumables.FoodEffects.TryGetValue(itemDefinition.ActivatableAbilityId, out var foodEffect);
 
@@ -37,47 +36,10 @@ public sealed class FoodEffectAbility(AbilityServices services) : ConsumableAbil
             }, true);
         }
 
-        ApplyFoodAura(player, foodEffect?.CompositeEffectId ?? itemDefinition.CompositeEffectId, foodEffect?.EffectDelayMs ?? 0);
+        ApplyFoodEffect(player, itemDefinition.NameId, foodEffect?.CompositeEffectId ?? itemDefinition.CompositeEffectId, foodEffect?.EffectDelayMs ?? 0);
 
-        FinishActivation(player, clientItem, itemDefinition, slot, FoodEffectCooldownMs);
+        FinishActivation(player, clientItem, itemDefinition, slot, ClampCooldown(FoodEffectCooldownMs));
 
         return true;
-    }
-
-    private static void ApplyFoodAura(Player player, int effectId, int delayMs)
-    {
-        if (effectId == 0)
-            return;
-
-        if (player.ActiveFoodEffectTagId != 0)
-        {
-            player.SendTunneledToVisible(new PlayerUpdatePacketRemoveEffectTagCompositeEffect
-            {
-                Guid = player.Guid,
-                TagId = player.ActiveFoodEffectTagId
-            }, true);
-        }
-
-        var tagId = NextEffectTagId();
-        player.ActiveFoodEffectTagId = tagId;
-
-        var addAura = new PlayerUpdatePacketAddEffectTagCompositeEffect
-        {
-            Guid = player.Guid,
-            TagId = tagId,
-            CompositeEffectId = effectId,
-            SourceGuid = player.Guid
-        };
-
-        if (delayMs > 0)
-            player.SendTunneledToVisibleDelayed(addAura, delayMs, true);
-        else
-            player.SendTunneledToVisible(addAura, true);
-
-        player.SendTunneledToVisibleDelayed(new PlayerUpdatePacketRemoveEffectTagCompositeEffect
-        {
-            Guid = player.Guid,
-            TagId = tagId
-        }, delayMs + FoodEffectDurationMs, true);
     }
 }

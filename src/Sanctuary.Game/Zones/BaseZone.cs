@@ -27,6 +27,7 @@ public abstract class BaseZone : IZone, IDisposable
 {
     private readonly ILogger _logger;
     private readonly IResourceManager _resourceManager;
+    private readonly ITradeManager _tradeManager;
     private readonly IScriptManager _scriptManager;
     private readonly ScriptRuntime _scriptRuntime;
     private readonly BaseZoneDefinition _zoneDefinition;
@@ -76,6 +77,7 @@ public abstract class BaseZone : IZone, IDisposable
     {
         _zoneDefinition = zoneDefinition;
         _resourceManager = serviceProvider.GetRequiredService<IResourceManager>();
+        _tradeManager = serviceProvider.GetRequiredService<ITradeManager>();
 
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
@@ -608,7 +610,7 @@ public abstract class BaseZone : IZone, IDisposable
 
     public bool TryCreatePlayer(ulong guid, UdpConnection connection, [MaybeNullWhen(false)] out Player player)
     {
-        player = new Player(this, connection, _resourceManager)
+        player = new Player(this, connection, _resourceManager, _tradeManager)
         {
             Guid = guid
         };

@@ -56,6 +56,7 @@ public class ResourceManager : IResourceManager
     public static readonly string RewardTablesFile = Path.Combine(BaseDirectory, "Rewards.json");
     public static readonly string CombatAbilitiesFile = Path.Combine(BaseDirectory, "CombatAbilities.json");
     public static readonly string CombatJobsFile = Path.Combine(BaseDirectory, "CombatJobs.json");
+    public static readonly string QuestsFile = Path.Combine(BaseDirectory, "Quests.json");
 
 
     public IdToStringLookup HairMappings { get; }
@@ -99,6 +100,8 @@ public class ResourceManager : IResourceManager
 
     public AbilityDefinitionCollection CombatAbilities { get; }
     public JobKitDefinitionCollection CombatJobs { get; }
+
+    public QuestDefinitionCollection Quests { get; }
 
     public ResourceManager(ILogger<ResourceManager> logger)
     {
@@ -150,6 +153,7 @@ public class ResourceManager : IResourceManager
         RewardTables = new(_logger);
         CombatAbilities = new(_logger);
         CombatJobs = new(_logger);
+        Quests = new(_logger);
     }
 
     public bool Load()
@@ -320,6 +324,9 @@ public class ResourceManager : IResourceManager
         if (!Npcs.Load(NpcsFile))
             return false;
 
+        if (!Quests.Load(QuestsFile))
+            return false;
+
         if (!Maps.Load(MapsDirectory))
             return false;
 
@@ -410,6 +417,8 @@ public class ResourceManager : IResourceManager
                 loaded = CombatAbilities.Load(CombatAbilitiesFile);
             else if (e.FullPath == CombatJobsFile)
                 loaded = CombatJobs.Load(CombatJobsFile);
+            else if (e.FullPath == QuestsFile)
+                loaded = Quests.Load(QuestsFile);
             else
                 _logger.LogWarning("Unknown file changed. File: {filepath}", e.FullPath);
 

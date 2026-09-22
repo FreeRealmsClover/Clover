@@ -47,6 +47,8 @@ public class DbCharacter
 
     public int? ActiveTitleId { get; set; }
 
+    public int? ActiveQuestId { get; set; }
+
     public float VipRank { get; set; }
     public int MembershipStatus { get; set; }
 
@@ -69,6 +71,7 @@ public class DbCharacter
     public ICollection<DbFriend> Friends { get; set; } = new HashSet<DbFriend>();
     public ICollection<DbIgnore> Ignores { get; set; } = new HashSet<DbIgnore>();
     public ICollection<DbProfile> Profiles { get; set; } = new HashSet<DbProfile>();
+    public ICollection<DbCharacterQuest> Quests { get; set; } = new HashSet<DbCharacterQuest>();
 
     public ulong UserId { get; set; }
     public DbUser User { get; set; } = null!;
