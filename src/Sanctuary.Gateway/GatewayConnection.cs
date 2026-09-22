@@ -6,6 +6,7 @@ using System.Numerics;
 using System.Text;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -17,6 +18,7 @@ using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.Game;
 using Sanctuary.Game.Entities;
+using Sanctuary.Game.Trading;
 using Sanctuary.Gateway.Handlers;
 using Sanctuary.Packet;
 using Sanctuary.Packet.Common;
@@ -80,6 +82,8 @@ public class GatewayConnection : UdpConnection
         SendFriendOffline();
 
         SendGuildMemberOffline();
+
+        _serviceProvider.GetRequiredService<ITradeManager>().OnDisconnected(Player);
 
         _loginClient.SendCharacterLogout(GuidHelper.GetPlayerId(Player.Guid));
 

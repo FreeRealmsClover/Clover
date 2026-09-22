@@ -16,6 +16,9 @@ public sealed class DbUserConfiguration : IEntityTypeConfiguration<DbUser>
         builder.Property(u => u.Username).IsRequired().HasMaxLength(254);
         builder.Property(u => u.Password).IsRequired().HasMaxLength(254);
 
+        builder.HasIndex(u => u.Email).IsUnique();
+        builder.Property(u => u.Email).IsRequired(false).HasMaxLength(320);
+
         builder.Property(u => u.Session).IsRequired(false).HasMaxLength(32);
         builder.Property(u => u.SessionCreated).IsRequired(false);
 

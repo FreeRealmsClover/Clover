@@ -1,6 +1,7 @@
 services:
   sanctuary.mysql:
     image: mariadb:10.5
+    container_name: sanctuary.mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
@@ -20,6 +21,7 @@ services:
 
   sanctuary.webapi:
     image: ${DOCKER_REGISTRY-}sanctuary-webapi
+    container_name: sanctuary.webapi
     build:
       context: ../
       dockerfile: Docker/Sanctuary.WebAPI.dockerfile
@@ -35,7 +37,7 @@ services:
       - Database__VersionString=10.5.29-mariadb
       - Database__ConnectionString=Server=sanctuary.mysql;Port=3306;Database=${MYSQL_DATABASE:-sanctuary};User=${MYSQL_USER:-sanctuary};Password=${MYSQL_PASSWORD:-sanctuary};
       - Server__LoginGatewayAddress=sanctuary.login:20041
-      - Server__ServerAddress=localhost:20260 # replace 'localhost' with your public IP or domain name
+      - Server__ServerAddress=40.160.90.7:20260
       - Urls=http://0.0.0.0:20040
     depends_on:
       sanctuary.mysql:
@@ -43,6 +45,7 @@ services:
 
   sanctuary.gateway:
     image: ${DOCKER_REGISTRY-}sanctuary-gateway
+    container_name: sanctuary.gateway
     build:
       context: ../
       dockerfile: Docker/Sanctuary.Gateway.dockerfile
@@ -57,6 +60,7 @@ services:
 
   sanctuary.login:
     image: ${DOCKER_REGISTRY-}sanctuary-login
+    container_name: sanctuary.login
     build:
       context: ../
       dockerfile: Docker/Sanctuary.Login.dockerfile

@@ -1,4 +1,7 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -30,6 +33,9 @@ public class GatewayService : BackgroundService
     private readonly IChatCommandManager _chatCommandManager;
     private readonly IHostApplicationLifetime _hostApplicationLifetime;
     private readonly IDbContextFactory<DatabaseContext> _dbContextFactory;
+
+    private Timer? _playerCountTimer;
+    private static readonly TimeSpan PlayerCountInterval = TimeSpan.FromSeconds(60);
 
     public GatewayService(
         ILogger<GatewayService> logger,
@@ -63,7 +69,40 @@ public class GatewayService : BackgroundService
     {
         _server.OnStopping();
 
+        _playerCountTimer?.Dispose();
+        _playerCountTimer = null;
+
         await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+    }
+
+    // Writes the current online-player count to Logs/player_count.json every
+    // PlayerCountInterval, so external tools (e.g. the Discord bots) can read
+    // it without needing a live connection into the game server.
+    private void WritePlayerCount(object? state)
+    {
+        try
+        {
+            var count = _zoneManager.StartingZone.Players.Count();
+
+            var payload = JsonSerializer.Serialize(new
+            {
+                player_count = count,
+                updated_at = DateTime.UtcNow.ToString("o")
+            });
+
+            var directory = Path.Combine(AppContext.BaseDirectory, "Logs");
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, "player_count.json");
+            var tempPath = path + ".tmp";
+
+            File.WriteAllText(tempPath, payload);
+            File.Move(tempPath, path, overwrite: true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write player_count.json.");
+        }
     }
 
     protected override Task ExecuteAsync(CancellationToken cancellationToken)
@@ -149,6 +188,8 @@ public class GatewayService : BackgroundService
         _logger.LogInformation($"{nameof(GatewayServer)} started and is listening on port '{_options.Port}'.");
 
         _server.OnStarted();
+
+        _playerCountTimer = new Timer(WritePlayerCount, null, TimeSpan.Zero, PlayerCountInterval);
 
         // Main server loop.
         while (!cancellationToken.IsCancellationRequested && clientConnection.Status != Status.Disconnected)

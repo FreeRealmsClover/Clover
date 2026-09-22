@@ -438,3 +438,5 @@ FodyWeavers.xsd
 # Ignore JetBrains Rider/ReSharper temporary files
 .idea/
 *.sln.iml
+*.zip
+

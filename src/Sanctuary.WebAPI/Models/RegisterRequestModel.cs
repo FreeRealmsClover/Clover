@@ -13,4 +13,9 @@ public class RegisterRequestModel
     [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be between 6 and 100 characters long.")]
     [RegularExpression(@"^[\x00-\x7F]+$", ErrorMessage = "Password can only contain ASCII characters.")]
     public required string Password { get; set; }
+
+    [Required(ErrorMessage = "Email is required.")]
+    [EmailAddress(ErrorMessage = "A valid email address is required.")]
+    [StringLength(320, ErrorMessage = "Email must be at most 320 characters long.")]
+    public required string Email { get; set; }
 }
