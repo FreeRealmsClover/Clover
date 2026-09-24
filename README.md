@@ -1,8 +1,8 @@
 # FreeRealms: Clover
 
-Clover's server emulator — a C# implementation of the Free Realms server, running as a Docker Compose stack of a login server, a gateway/world server, and a web API used by the [FreeRealms: Clover website](https://freerealmsclover.com) and launcher.
+Clover's server emulator, a C# implementation of the Free Realms server, running as a Docker Compose stack of a login server, a gateway/world server, and a web API used by the [FreeRealms: Clover website](https://freerealmsclover.com) and launcher.
 
-This is the actual source powering the live Clover server. It's open source under AGPL-3.0 — see [LICENSE](LICENSE) — and contributions are welcome.
+This is the actual source powering the live Clover server. It's open source under AGPL-3.0 - see [LICENSE](LICENSE) - and contributions are welcome.
 
 ## Services
 
@@ -65,7 +65,7 @@ A few notes for contributors:
 
 ## Credits
 
-Built on top of the open source [Sanctuary](https://github.com/Open-Source-Free-Realms/Sanctuary) Free Realms server emulator by Open Source Free Realms, licensed under AGPL-3.0. This repository is Clover's own actively developed codebase, not a passive mirror — see [LICENSE](LICENSE) for full attribution.
+Built on top of the open source [Sanctuary](https://github.com/Open-Source-Free-Realms/Sanctuary) Free Realms server emulator by Open Source Free Realms, licensed under AGPL-3.0. This repository is Clover's own actively developed codebase, not a passive mirror - see [LICENSE](LICENSE) for full attribution.
 
 ## License
 
