@@ -82,8 +82,14 @@ public static class LoginRequestHandler
             return true;
         }
 
-        user.Session = null;
-        user.SessionCreated = null;
+        // Deliberately NOT single-use: the Launcher fetches session_id once
+        // at login and reuses it for every Play click during that Launcher
+        // run (it doesn't hold onto the password to silently re-login each
+        // time). Consuming the session here after first use broke every
+        // relaunch without a fresh login - the client would fail this
+        // check on the second Play click and fall back to its dead
+        // built-in crash page. The TotalMinutes check above is still the
+        // real expiry; a session just isn't nulled out on first success.
 #endif
 
         user.LastLogin = DateTimeOffset.UtcNow;
