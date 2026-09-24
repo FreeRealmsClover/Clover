@@ -1,265 +1,72 @@
+# FreeRealms: Clover
 
-<a id="readme-top"></a>
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![MIT License][license-shield]][license-url]
+Clover's server emulator — a C# implementation of the Free Realms server, running as a Docker Compose stack of a login server, a gateway/world server, and a web API used by the [FreeRealms: Clover website](https://freerealmsclover.com) and launcher.
 
+This is the actual source powering the live Clover server. It's open source under AGPL-3.0 — see [LICENSE](LICENSE) — and contributions are welcome.
 
+## Services
 
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/Open-Source-Free-Realms/Sanctuary">
-    <img src="images/logo.png" alt="Logo" width="137" height="80">
-  </a>
+| Service | Purpose | Port |
+|---|---|---|
+| `sanctuary.mysql` | MariaDB database | internal only — not exposed publicly |
+| `sanctuary.webapi` | HTTP API used by the website/launcher (login, registration, portraits) | 20040/tcp |
+| `sanctuary.gateway` | World/zone server the game client connects to after login | 20260/udp |
+| `sanctuary.login` | Login/auth server | 20041-20042/udp |
 
-<h3 align="center">Sanctuary</h3>
-
-  <p align="center">
-    Sanctuary is an open source server emulator for Free Realms built from scratch written in C#.
-    <br />
-    <a href="https://github.com/Open-Source-Free-Realms/Sanctuary/wiki"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/Open-Source-Free-Realms/Sanctuary">View Demo</a>
-    ·
-    <a href="https://github.com/Open-Source-Free-Realms/Sanctuary/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    ·
-    <a href="https://github.com/Open-Source-Free-Realms/Sanctuary/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
-  </p>
-</div>
-
-
-
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
-
-
-
-<!-- ABOUT THE PROJECT -->
-## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://github.com/Open-Source-Free-Realms/Sanctuary)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-### Built With
-
-* [![CSharp][CSharp]][CSharp-url]
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- GETTING STARTED -->
 ## Getting Started
-
-This repository only contains the **server emulator** for Free Realms. To play the game, you must also have a **Free Realms client**. You can download the client using the **OSFR Launcher** available here: [OSFR Launcher](https://github.com/Open-Source-Free-Realms/Launcher).
 
 ### Prerequisites
 
-Before you can use this software, ensure you have the following installed:
+- Docker and Docker Compose
+- A copy of `.env` with the required secrets (see below) — never commit this file
 
-- **Visual Studio 2022**  
-  Make sure to include the **.NET Framework development workload** during installation.
+### Setup
 
-### Release
-
-1. Clone the repo
+1. Clone the repo:
    ```sh
-   git clone https://github.com/Open-Source-Free-Realms/Sanctuary.git
+   git clone https://github.com/FreeRealmsClover/Clover.git
+   cd Clover
    ```
-2. Build the solution for `Sanctuary.Core` for `Release`
-3. Create a file named `database.json` in the `Release` folder located within the new `bin` folder
-4. Paste the following
-   ```json
-    {
-    "Database": {
-        "Provider": "Sqlite",
-        "ConnectionString": "Data Source=D:\\Games\\Free Realms\\sanctuary.db;"
-    }
+2. Create `src/Docker/.env` with the following, each set to your own generated values:
    ```
-5. Launch `Sanctuary.Login`, `Sanctuary.Gateway`
-6. Connect to the client
-
-**_IMPORTANT:_** Update the Data Source file path (D:\\Games\\Free Realms\\sanctuary.db) to match the location where your database files are stored.
-
-**_NOTE:_** The following user should already exist, but if not then implement one with the following credentials:
-
-```sh
-1	admin	admin	EXmdPd5dbAcs58vZ0iCcPRtJkGdMePL2	10	0	1	1	2024-06-22 13:51:13.2736902+01:00	2024-07-14 01:57:45.8765645+00:00
-```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-### Debug
-
-1. Clone the repo
+   MYSQL_ROOT_PASSWORD=<generate with e.g. openssl rand -base64 24>
+   MYSQL_PASSWORD=<generate with e.g. openssl rand -base64 24>
+   LOGIN_GATEWAY_CHALLENGE=<generate with e.g. openssl rand -hex 32>
+   ```
+3. From `src/Docker`:
    ```sh
-   git clone https://github.com/Open-Source-Free-Realms/Sanctuary.git
+   docker compose up -d
    ```
-2. Build the solution for `Sanctuary.Core` for `Debug`
-3. Right-Click **'Manage User Secrets'** for the following projects:
-   - `Sanctuary.Gateway`
-   - `Sanctuary.Login`
-   - `Sanctuary.Database`
+4. Point a Free Realms client and launcher at your server's login port.
 
-4. Copy and paste the following configuration for **SQLite** into the secrets editor:
+### Production checklist
 
-   ```json
-   {
-     "Database": {
-       "Provider": "Sqlite",
-       "ConnectionString": "Data Source=D:\\Games\\Free Realms\\sanctuary.db;"
-     }
-   }
-5. Launch `Sanctuary.Login`, `Sanctuary.Gateway`
-6. Connect to the client
+If you're standing this up for real players rather than local development:
 
-**_IMPORTANT:_** Update the Data Source file path (D:\\Games\\Free Realms\\sanctuary.db) to match the location where your database files are stored.
+- Put a TLS-terminating reverse proxy in front of `sanctuary.webapi` — don't expose it raw.
+- Back up the `sanctuary.mysql` data volume regularly.
+- Never expose MariaDB's port (3306) publicly — it's internal-only in this compose file by design, keep it that way.
+- Set real, unique values for every secret in `.env` — don't reuse the examples above.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-### Docker Compose
-
-1. Clone the repo
-   ```sh
-   git clone https://github.com/Open-Source-Free-Realms/Sanctuary.git
-   ```
-2. Launch `Docker Compose`
-3. Connect to the client
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- USAGE EXAMPLES -->
-## Usage
-
-To spawn an npc ```/npc spawn <NameId> <ModelId> [TextureAlias]``` TextureAlias is optional
-
-_For more examples, please refer to the [Documentation](https://github.com/Open-Source-Free-Realms/Sanctuary/wiki)_
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
-
-See the [open issues](https://github.com/Open-Source-Free-Realms/Sanctuary/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+Contributions are welcome — this is meant to be a real community project, not just Clover's private codebase.
 
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes
+4. Open a pull request describing what changed and why
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+A few notes for contributors:
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+- .NET 9 is the target framework.
+- Keep pull requests focused — one fix or feature per PR is much easier to review than a large mixed changeset.
+- Open an issue before starting on a large or architectural change, so it can be discussed first.
 
-### Top contributors:
+## Credits
 
-<a href="https://github.com/Open-Source-Free-Realms/Sanctuary/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Open-Source-Free-Realms/Sanctuary" alt="contrib.rocks image" />
-</a>
+Built on top of the open source [Sanctuary](https://github.com/Open-Source-Free-Realms/Sanctuary) Free Realms server emulator by Open Source Free Realms, licensed under AGPL-3.0. This repository is Clover's own actively developed codebase, not a passive mirror — see [LICENSE](LICENSE) for full attribution.
 
+## License
 
-
-<!-- LICENSE -->
-<!-- ## License
-
-Distributed under the MIT License. See `LICENSE.txt` for more information.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p> -->
-
-
-
-<!-- CONTACT -->
-<!-- ## Contact
-
-Your Name - [@twitter_handle](https://twitter.com/twitter_handle) - email@email_client.com
-
-Project Link: [https://github.com/Open-Source-Free-Realms/Sanctuary](https://github.com/Open-Source-Free-Realms/Sanctuary)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p> -->
-
-
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* []()
-* []()
-* []()
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Open-Source-Free-Realms/Sanctuary.svg?style=for-the-badge
-[contributors-url]: https://github.com/Open-Source-Free-Realms/Sanctuary/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Open-Source-Free-Realms/Sanctuary.svg?style=for-the-badge
-[forks-url]: https://github.com/Open-Source-Free-Realms/Sanctuary/network/members
-[stars-shield]: https://img.shields.io/github/stars/Open-Source-Free-Realms/Sanctuary.svg?style=for-the-badge
-[stars-url]: https://github.com/Open-Source-Free-Realms/Sanctuary/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Open-Source-Free-Realms/Sanctuary.svg?style=for-the-badge
-[issues-url]: https://github.com/Open-Source-Free-Realms/Sanctuary/issues
-[license-shield]: https://img.shields.io/github/license/Open-Source-Free-Realms/Sanctuary.svg?style=for-the-badge
-[license-url]: https://github.com/Open-Source-Free-Realms/Sanctuary/blob/master/LICENSE.txt
-[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
-[linkedin-url]: https://linkedin.com/in/linkedin_username
-[product-screenshot]: images/screenshot.jpg
-[CSharp]: https://img.shields.io/badge/csharp-000000?style=for-the-badge&logo=csharp&logoColor=white
-[CSharp-url]: https://dotnet.microsoft.com/en-us/languages/csharp
+AGPL-3.0 — see [LICENSE](LICENSE) for the full text.
