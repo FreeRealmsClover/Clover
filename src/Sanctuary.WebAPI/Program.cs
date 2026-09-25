@@ -13,6 +13,7 @@ using Sanctuary.Core.Extensions;
 using Sanctuary.Database;
 using Sanctuary.WebAPI.Endpoints;
 using Sanctuary.WebAPI.Options;
+using Sanctuary.WebAPI.Services;
 
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
@@ -35,6 +36,14 @@ builder.Services.AddOptionsWithValidateOnStart<DatabaseOptions>()
 builder.Services.AddOptionsWithValidateOnStart<WebAPIOptions>()
     .BindConfiguration(WebAPIOptions.Section)
     .ValidateOnStart();
+
+// VpnApi key is optional at startup (not ValidateOnStart) - the service
+// itself just logs a warning and skips the check if it is blank, rather
+// than crash-looping the whole API before the key has even been obtained.
+builder.Services.AddOptions<VpnApiOptions>()
+    .BindConfiguration(VpnApiOptions.Section);
+
+builder.Services.AddHttpClient<VpnDetectionService>();
 
 // Database
 builder.Services.AddDatabase(builder.Configuration);

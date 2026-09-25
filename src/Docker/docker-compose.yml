@@ -41,6 +41,7 @@ services:
       - Server__LoginGatewayAddress=sanctuary.login:20041
       - Server__ServerAddress=40.160.90.7:20260
       - Server__LoginGatewayChallenge=${LOGIN_GATEWAY_CHALLENGE:?Set LOGIN_GATEWAY_CHALLENGE in .env}
+      - VpnApi__ApiKey=${VPNAPI_API_KEY}
       - Urls=http://0.0.0.0:20040
     depends_on:
       sanctuary.mysql:
