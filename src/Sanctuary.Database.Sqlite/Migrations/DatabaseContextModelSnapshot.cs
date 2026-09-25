@@ -414,6 +414,12 @@ namespace Sanctuary.Database.Sqlite.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValueSql("DATE()");
 
+                    b.Property<ulong?>("DiscordId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("DiscordUsername")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasMaxLength(320)
                         .HasColumnType("TEXT");
