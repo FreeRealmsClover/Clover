@@ -32,7 +32,20 @@ public sealed class MySqlDatabaseFactory : IDbContextFactory<DatabaseContext>, I
 
         var databaseOptions = configuration.GetSection(DatabaseOptions.Section).Get<DatabaseOptions>();
 
+        // Falls back to Database__Provider / Database__ConnectionString /
+        // Database__VersionString env vars (the same names the app itself
+        // reads at runtime) when User Secrets don't provide these - lets
+        // `dotnet ef` commands run from a one-off container (pointed at the
+        // real DB via env vars) without needing secrets configured there too.
+        databaseOptions ??= new DatabaseOptions
+        {
+            Provider = Enum.Parse<DatabaseProvider>(Environment.GetEnvironmentVariable("Database__Provider") ?? "0"),
+            ConnectionString = Environment.GetEnvironmentVariable("Database__ConnectionString")!,
+            VersionString = Environment.GetEnvironmentVariable("Database__VersionString"),
+        };
+
         ArgumentNullException.ThrowIfNull(databaseOptions);
+        ArgumentException.ThrowIfNullOrEmpty(databaseOptions.ConnectionString);
 
         var builder = new DbContextOptionsBuilder();
 

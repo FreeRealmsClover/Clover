@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +25,11 @@ public static class AuthEndpoints
 {
     private static ILogger _logger = null!;
 
+    // How long a /forgot-password reset link stays valid. Matches the
+    // "This link expires in 1 hour" copy in the Website's reset-password
+    // email.
+    private static readonly TimeSpan PasswordResetTokenLifetime = TimeSpan.FromHours(1);
+
     public static void MapAuthEndpoints(this WebApplication app)
     {
         var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
@@ -34,6 +40,9 @@ public static class AuthEndpoints
         app.MapPost("/register", RegisterHandlerAsync);
         app.MapGet("/register/username-available", UsernameAvailableHandlerAsync);
         app.MapGet("/register/email-available", EmailAvailableHandlerAsync);
+        app.MapPost("/confirm-email", ConfirmEmailHandlerAsync);
+        app.MapPost("/forgot-password", ForgotPasswordHandlerAsync);
+        app.MapPost("/reset-password", ResetPasswordHandlerAsync);
     }
 
     private static async Task<IResult> LoginHandlerAsync(
@@ -61,6 +70,20 @@ public static class AuthEndpoints
             _logger.LogWarning("Login failed, invalid password for username: {Username}", request.Username);
 
             return Results.Unauthorized();
+        }
+
+        // Same gate as the actual in-game login (see LoginRequestHandler.cs)
+        // - an account can't do anything until its email is confirmed. Kept
+        // as a distinct 403 (rather than reusing 401) so the Website can
+        // show this specific message instead of "Incorrect username or
+        // password."
+        if (!dbUser.EmailConfirmed)
+        {
+            _logger.LogWarning("Login failed, email not confirmed for username: {Username}", request.Username);
+
+            return Results.Text(
+                "Please confirm your email before logging in. Check your inbox for the confirmation link.",
+                statusCode: StatusCodes.Status403Forbidden);
         }
 
         dbUser.Session = Guid.NewGuid().ToString("N");
@@ -112,12 +135,19 @@ public static class AuthEndpoints
         var salt = BC.GenerateSalt();
         var hashedPassword = BC.HashPassword(request.Password, salt);
 
+        // The Website emails this link itself (via Resend) right after this
+        // call returns successfully - Sanctuary never sends email directly,
+        // it only generates the token and hands it back in the response.
+        var emailConfirmationToken = RandomNumberGenerator.GetHexString(64);
+
         var dbUser = new DbUser
         {
             Username = request.Username,
             Password = hashedPassword,
             Email = request.Email,
             IsMember = webAPIOptions.Value.MemberByDefault ?? true,
+            EmailConfirmed = false,
+            EmailConfirmationToken = emailConfirmationToken,
         };
 
         await dbContext.Users.AddAsync(dbUser, cancellationToken);
@@ -128,6 +158,117 @@ public static class AuthEndpoints
 
             return Results.InternalServerError();
         }
+
+        return Results.Ok(new { emailConfirmationToken = dbUser.EmailConfirmationToken });
+    }
+
+    private static async Task<IResult> ConfirmEmailHandlerAsync(
+        ConfirmEmailRequestModel request,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var dbUser = await dbContext.Users.FirstOrDefaultAsync(
+            x => x.EmailConfirmationToken == request.Token, cancellationToken);
+
+        if (dbUser is null)
+        {
+            _logger.LogWarning("Email confirmation failed, no user found for the given token.");
+
+            return Results.NotFound();
+        }
+
+        dbUser.EmailConfirmed = true;
+        dbUser.EmailConfirmationToken = null;
+
+        if (await dbContext.SaveChangesAsync(cancellationToken) <= 0)
+        {
+            _logger.LogError("Failed to confirm email for username: {Username}", dbUser.Username);
+
+            return Results.InternalServerError();
+        }
+
+        _logger.LogInformation("Email confirmed for username: {Username}", dbUser.Username);
+
+        return Results.Ok();
+    }
+
+    private static async Task<IResult> ForgotPasswordHandlerAsync(
+        ForgotPasswordRequestModel request,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var dbUser = await dbContext.Users.FirstOrDefaultAsync(x => x.Email == request.Email, cancellationToken);
+
+        // Deliberately still 200 OK with an empty body when no account
+        // matches - the Website only sends the reset email when
+        // passwordResetToken/username are both present, and always shows
+        // the same generic "if that email is registered..." message either
+        // way. Returning 404 here (or anything that looks different) would
+        // let someone enumerate which emails are registered.
+        if (dbUser is null)
+        {
+            _logger.LogWarning("Forgot-password requested for an email with no matching account: {Email}", request.Email);
+
+            return Results.Ok();
+        }
+
+        dbUser.PasswordResetToken = RandomNumberGenerator.GetHexString(64);
+        dbUser.PasswordResetTokenExpires = DateTimeOffset.UtcNow.Add(PasswordResetTokenLifetime);
+
+        if (await dbContext.SaveChangesAsync(cancellationToken) <= 0)
+        {
+            _logger.LogError("Failed to save password reset token for username: {Username}", dbUser.Username);
+
+            return Results.InternalServerError();
+        }
+
+        return Results.Ok(new { passwordResetToken = dbUser.PasswordResetToken, username = dbUser.Username });
+    }
+
+    private static async Task<IResult> ResetPasswordHandlerAsync(
+        ResetPasswordRequestModel request,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var dbUser = await dbContext.Users.FirstOrDefaultAsync(
+            x => x.PasswordResetToken == request.Token, cancellationToken);
+
+        if (dbUser is null || dbUser.PasswordResetTokenExpires is null || dbUser.PasswordResetTokenExpires < DateTimeOffset.UtcNow)
+        {
+            _logger.LogWarning("Password reset failed, invalid or expired token.");
+
+            return Results.NotFound();
+        }
+
+        var salt = BC.GenerateSalt();
+
+        dbUser.Password = BC.HashPassword(request.NewPassword, salt);
+        dbUser.PasswordResetToken = null;
+        dbUser.PasswordResetTokenExpires = null;
+
+        if (await dbContext.SaveChangesAsync(cancellationToken) <= 0)
+        {
+            _logger.LogError("Failed to reset password for username: {Username}", dbUser.Username);
+
+            return Results.InternalServerError();
+        }
+
+        _logger.LogInformation("Password reset for username: {Username}", dbUser.Username);
 
         return Results.Ok();
     }
