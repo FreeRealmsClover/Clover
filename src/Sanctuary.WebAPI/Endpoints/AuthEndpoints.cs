@@ -16,6 +16,7 @@ using Sanctuary.Database;
 using Sanctuary.Database.Entities;
 using Sanctuary.WebAPI.Models;
 using Sanctuary.WebAPI.Options;
+using Sanctuary.WebAPI.Services;
 
 using BC = BCrypt.Net.BCrypt;
 
@@ -46,13 +47,26 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> LoginHandlerAsync(
+        HttpContext httpContext,
         LoginRequestModel request,
         CancellationToken cancellationToken,
         IOptionsSnapshot<WebAPIOptions> webAPIOptions,
-        IDbContextFactory<DatabaseContext> dbContextFactory)
+        IDbContextFactory<DatabaseContext> dbContextFactory,
+        VpnDetectionService vpnDetectionService)
     {
         if (!MiniValidator.TryValidate(request, out var errors))
             return Results.ValidationProblem(errors);
+
+        var clientIp = GetClientIp(httpContext);
+
+        if (await vpnDetectionService.IsVpnOrProxyAsync(clientIp, cancellationToken))
+        {
+            _logger.LogWarning("Login blocked, VPN/proxy detected for IP {ClientIp}, username: {Username}", clientIp, request.Username);
+
+            return Results.Text(
+                "VPN/Proxy detected. Please turn off to continue.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
 
         var dbContext = await dbContextFactory.CreateDbContextAsync();
 
@@ -104,13 +118,26 @@ public static class AuthEndpoints
     }
 
     private static async Task<IResult> RegisterHandlerAsync(
+        HttpContext httpContext,
         RegisterRequestModel request,
         CancellationToken cancellationToken,
         IOptions<WebAPIOptions> webAPIOptions,
-        IDbContextFactory<DatabaseContext> dbContextFactory)
+        IDbContextFactory<DatabaseContext> dbContextFactory,
+        VpnDetectionService vpnDetectionService)
     {
         if (!MiniValidator.TryValidate(request, out var errors))
             return Results.ValidationProblem(errors);
+
+        var clientIp = GetClientIp(httpContext);
+
+        if (await vpnDetectionService.IsVpnOrProxyAsync(clientIp, cancellationToken))
+        {
+            _logger.LogWarning("Registration blocked, VPN/proxy detected for IP {ClientIp}, username: {Username}", clientIp, request.Username);
+
+            return Results.Text(
+                "VPN/Proxy detected. Please turn off to continue.",
+                statusCode: StatusCodes.Status403Forbidden);
+        }
 
         var dbContext = await dbContextFactory.CreateDbContextAsync();
 
@@ -307,5 +334,24 @@ public static class AuthEndpoints
         var taken = await dbContext.Users.AnyAsync(x => x.Email == email, cancellationToken);
 
         return Results.Ok(new { available = !taken });
+    }
+
+    // Prefers X-Forwarded-For, which the Website's own Node proxy sets to
+    // the real visitor's IP before calling this API server-to-server
+    // (otherwise this would only ever see the Website container's own
+    // address). The Launcher hits this API directly with no proxy in
+    // between, so it has no such header and falls through to the raw
+    // connection address. Trusting this header is a deliberate tradeoff for
+    // a project this size - it is spoofable by anyone who calls this API
+    // directly with a fake header, but nothing downstream of the
+    // VPN/proxy gate relies on this value for anything else.
+    private static string? GetClientIp(HttpContext httpContext)
+    {
+        var forwardedFor = httpContext.Request.Headers["X-Forwarded-For"].ToString();
+
+        if (!string.IsNullOrWhiteSpace(forwardedFor))
+            return forwardedFor.Split(',')[0].Trim();
+
+        return httpContext.Connection.RemoteIpAddress?.ToString();
     }
 }
