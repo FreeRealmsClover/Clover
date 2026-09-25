@@ -110,6 +110,21 @@ public static class LoginRequestHandler
             return true;
         }
 
+        // Email confirmation is mandatory too, same as the Discord check
+        // right below - an account that never clicked its confirmation
+        // link (sent by the Website via Resend at registration) hasn't
+        // proven the email is real yet. Checked first since it comes
+        // earlier in the account lifecycle: confirm email, then verify in
+        // #verify.
+        if (!user.EmailConfirmed)
+        {
+            connection.Send(loginReply);
+
+            _logger.LogWarning("User tried to login with an unconfirmed email. ( UserId: {UserId}, Session: {session} )", user.Id, packet.Session);
+
+            return true;
+        }
+
         // Discord verification is mandatory: an account with no linked
         // DiscordId hasn't verified in #verify yet (Robbie sets this),
         // so it's refused here the same way an invalid/expired session

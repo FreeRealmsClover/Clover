@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Sanctuary.Database.Entities;
@@ -15,6 +15,28 @@ public sealed class DbUser
     // (enforced by RegisterRequestModel), so in practice this is only ever
     // null for pre-existing accounts.
     public string? Email { get; set; }
+
+    // Whether Email has been confirmed via the link the Website emails at
+    // registration. Login is refused for any account where this is false -
+    // both the website login (AuthEndpoints.LoginHandlerAsync) and the
+    // actual game client login (LoginRequestHandler.cs), the same way both
+    // already refuse an account with no linked Discord. Existing accounts
+    // from before this feature existed are grandfathered in as confirmed
+    // by the migration that adds this column (defaultValue: true) - only
+    // registrations made after that point start out unconfirmed.
+    public bool EmailConfirmed { get; set; }
+
+    // Set at registration, cleared once /confirm-email succeeds. Null for
+    // any account that's already confirmed, including grandfathered ones
+    // that never got a token in the first place.
+    public string? EmailConfirmationToken { get; set; }
+
+    // Set by /forgot-password, cleared by /reset-password. A token past
+    // PasswordResetTokenExpires is treated as invalid by
+    // ResetPasswordHandlerAsync - there's no background cleanup job, an
+    // expired-but-still-stored token is just never accepted.
+    public string? PasswordResetToken { get; set; }
+    public DateTimeOffset? PasswordResetTokenExpires { get; set; }
 
     public string? Session { get; set; }
     public DateTimeOffset? SessionCreated { get; set; }
