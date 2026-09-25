@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
@@ -106,6 +106,23 @@ public static class LoginRequestHandler
             loginReply.Status = 2;
 
             connection.Send(loginReply);
+
+            return true;
+        }
+
+        // Discord verification is mandatory: an account with no linked
+        // DiscordId hasn't verified in #verify yet (Robbie sets this),
+        // so it's refused here the same way an invalid/expired session
+        // is - a plain failed reply (LoggedIn stays false, Status stays
+        // at its default 0). We don't have a documented client-side
+        // Status code for "not verified" specifically, so reusing the
+        // already-proven generic-failure reply is safer than inventing
+        // an unmapped one the client might not render sensibly.
+        if (user.DiscordId is null)
+        {
+            connection.Send(loginReply);
+
+            _logger.LogWarning("User tried to login without a linked Discord account. ( UserId: {UserId}, Session: {session} )", user.Id, packet.Session);
 
             return true;
         }
