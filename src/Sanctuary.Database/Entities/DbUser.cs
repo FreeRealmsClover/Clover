@@ -31,5 +31,14 @@ public sealed class DbUser
     public DateTimeOffset Created { get; set; }
     public DateTimeOffset? LastLogin { get; set; }
 
+    // Set only by Robbie (the Discord bot) via its own verification flow in
+    // #verify - never at registration. A null DiscordId means the account
+    // isn't linked yet, which LoginRequestHandler checks and refuses to log
+    // in for. DiscordUsername is stored purely for display/moderation
+    // convenience (e.g. showing it in #status or mod tooling) - DiscordId is
+    // the actual source of truth since a Discord username can change.
+    public ulong? DiscordId { get; set; }
+    public string? DiscordUsername { get; set; }
+
     public ICollection<DbCharacter> Characters { get; set; } = [];
 }
