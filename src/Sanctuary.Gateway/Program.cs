@@ -94,6 +94,7 @@ builder.ConfigureServices((hostBuilderContext, serviceCollection) =>
     });
 
     serviceCollection.AddHostedService<GatewayService>();
+    serviceCollection.AddHostedService<PendingModActionService>();
 
     // Managers
     serviceCollection.AddSingleton<IZoneManager, ZoneManager>();

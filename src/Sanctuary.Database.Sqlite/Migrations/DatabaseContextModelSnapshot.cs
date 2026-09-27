@@ -367,6 +367,48 @@ namespace Sanctuary.Database.Sqlite.Migrations
                     b.ToTable("Mounts");
                 });
 
+            modelBuilder.Entity("Sanctuary.Database.Entities.DbPendingModAction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValueSql("DATE()");
+
+                    b.Property<string>("IssuedBy")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Processed")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(false);
+
+                    b.Property<DateTimeOffset?>("ProcessedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<ulong>("TargetUserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTimeOffset?>("Until")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Processed");
+
+                    b.ToTable("PendingModActions");
+                });
+
             modelBuilder.Entity("Sanctuary.Database.Entities.DbProfile", b =>
                 {
                     b.Property<int>("Id")
@@ -424,6 +466,12 @@ namespace Sanctuary.Database.Sqlite.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("EmailConfirmationToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsAdmin")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
@@ -456,6 +504,12 @@ namespace Sanctuary.Database.Sqlite.Migrations
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasMaxLength(254)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset?>("PasswordResetTokenExpires")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Session")

@@ -17,7 +17,7 @@ public class ModChatCommand : IChatCommand
 
     public string KeyWord => "mod";
 
-    public string Usage => "ban|mute <player> <minutes> | unban|unmute <player>";
+    public string Usage => "ban|mute <player> <minutes> | unban|unmute <player> | kick <player>";
 
     public string Description => "Moderation command for banning, muting, unbanning, or unmuting players.";
 
@@ -54,6 +54,8 @@ public class ModChatCommand : IChatCommand
                 return Unban(invoker, args);
             case "unmute":
                 return Unmute(invoker, args);
+            case "kick":
+                return Kick(invoker, args);
             default:
                 return false;
         }
@@ -153,6 +155,38 @@ public class ModChatCommand : IChatCommand
         ChatHelper.SendSystemMessage(invoker, banUntilTime is null
             ? $"{targetName} has been banned permanently."
             : $"{targetName} has been banned until {banUntilTime:u}.");
+        return true;
+    }
+
+    private bool Kick(Player invoker, string[] args)
+    {
+        if (args.Length < 1)
+            return false;
+
+        string targetName = string.Join(' ', args);
+
+        if (IsSelfTarget(invoker, targetName))
+        {
+            ChatHelper.SendSystemMessage(invoker, "You cannot kick yourself.");
+            return true;
+        }
+
+        using DatabaseContext dbContext = _dbContextFactory.CreateDbContext();
+
+        if (!TryResolveTarget(invoker, dbContext, targetName, out var targetUserId))
+            return false;
+
+        if (!_zoneManager.TryGetPlayer(targetName, out var targetPlayer))
+        {
+            ChatHelper.SendSystemMessage(invoker, $"{targetName} is not currently online.");
+            return true;
+        }
+
+        targetPlayer.Disconnect();
+
+        LogAction(invoker, "Kick", targetName);
+
+        ChatHelper.SendSystemMessage(invoker, $"{targetName} has been kicked.");
         return true;
     }
 
