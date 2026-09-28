@@ -44,6 +44,7 @@ public static class AuthEndpoints
         app.MapPost("/confirm-email", ConfirmEmailHandlerAsync);
         app.MapPost("/forgot-password", ForgotPasswordHandlerAsync);
         app.MapPost("/reset-password", ResetPasswordHandlerAsync);
+        app.MapPost("/resend-confirmation", ResendConfirmationHandlerAsync);
     }
 
     private static async Task<IResult> LoginHandlerAsync(
@@ -298,6 +299,58 @@ public static class AuthEndpoints
         _logger.LogInformation("Password reset for username: {Username}", dbUser.Username);
 
         return Results.Ok();
+    }
+
+    private static async Task<IResult> ResendConfirmationHandlerAsync(
+        ResendConfirmationRequestModel request,
+        CancellationToken cancellationToken,
+        IDbContextFactory<DatabaseContext> dbContextFactory)
+    {
+        if (!MiniValidator.TryValidate(request, out var errors))
+            return Results.ValidationProblem(errors);
+
+        var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var dbUser = await dbContext.Users.FirstOrDefaultAsync(x => x.Username == request.Username, cancellationToken);
+
+        // Same shape as /forgot-password: a missing account and an
+        // already-confirmed one both just return 200 OK with an empty
+        // body, and the Website shows the same generic message either
+        // way rather than confirming or denying anything about the
+        // account to whoever is asking.
+        if (dbUser is null)
+        {
+            _logger.LogWarning("Resend-confirmation requested for a username with no matching account: {Username}", request.Username);
+
+            return Results.Ok();
+        }
+
+        if (dbUser.EmailConfirmed)
+        {
+            _logger.LogInformation("Resend-confirmation requested for an already-confirmed username: {Username}", request.Username);
+
+            return Results.Ok();
+        }
+
+        // Regenerated rather than reused - matches /forgot-password's own
+        // token-per-request approach, and means an old confirmation link
+        // (possibly sitting unread in a spam folder) stops working once a
+        // new one is requested.
+        dbUser.EmailConfirmationToken = RandomNumberGenerator.GetHexString(64);
+
+        if (await dbContext.SaveChangesAsync(cancellationToken) <= 0)
+        {
+            _logger.LogError("Failed to save new confirmation token for username: {Username}", dbUser.Username);
+
+            return Results.InternalServerError();
+        }
+
+        return Results.Ok(new
+        {
+            emailConfirmationToken = dbUser.EmailConfirmationToken,
+            email = dbUser.Email,
+            username = dbUser.Username
+        });
     }
 
     // Lightweight "is this taken" checks used for as-you-type feedback on
