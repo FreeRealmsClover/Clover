@@ -41,6 +41,11 @@ public sealed class BoomboxAbility(AbilityServices services) : ConsumableAbility
         var effectIds = boomboxDefinition?.EffectIds ?? [];
         var effectId = effectIds.Length > 0 ? effectIds[System.Random.Shared.Next(effectIds.Length)] : 0;
 
+        // CloverBoomboxSongs: some boombox songs are missing from the asset server, so those
+        // boomboxes play a radio track instead.
+        var songIds = boomboxDefinition?.SongEffectIds ?? [];
+        var radioEffectId = songIds.Length > 0 ? songIds[System.Random.Shared.Next(songIds.Length)] : 0;
+
         var danceSequence = boomboxDefinition?.DanceSequence ?? [3501, 3502, 3503, 3504, 3505];
         var transformModelId = boomboxDefinition?.TransformModelId ?? 0;
 
@@ -90,10 +95,28 @@ public sealed class BoomboxAbility(AbilityServices services) : ConsumableAbility
                 recipient.SendTunneled(songEffect);
         }
 
-        StartDanceLoop(startingZone, boomboxNpc, spawnPosition, danceSequence, songTagId, effectId, transformModelId);
+        var radioTagId = 0;
+
+        if (radioEffectId != 0)
+        {
+            radioTagId = NextEffectTagId();
+
+            var radioEffect = new PlayerUpdatePacketAddEffectTagCompositeEffect
+            {
+                Guid = boomboxNpc.Guid,
+                TagId = radioTagId,
+                CompositeEffectId = radioEffectId,
+                SourceGuid = boomboxNpc.Guid,
+            };
+
+            foreach (var recipient in poofRecipients)
+                recipient.SendTunneled(radioEffect);
+        }
+
+        StartDanceLoop(startingZone, boomboxNpc, spawnPosition, danceSequence, songTagId, effectId, transformModelId, radioTagId, radioEffectId);
     }
 
-    private static void StartDanceLoop(StartingZone startingZone, Npc boomboxNpc, Vector4 spawnPosition, int[] danceSequence, int songTagId, int effectId, int transformModelId)
+    private static void StartDanceLoop(StartingZone startingZone, Npc boomboxNpc, Vector4 spawnPosition, int[] danceSequence, int songTagId, int effectId, int transformModelId, int radioTagId, int radioEffectId)
     {
         const float BoomboxRangeInMeters = 15.0f;
         const int SwitchMs = 4000;
@@ -124,6 +147,18 @@ public sealed class BoomboxAbility(AbilityServices services) : ConsumableAbility
 
                     foreach (var player in startingZone.Players)
                         player.SendTunneled(stopSong);
+                }
+
+                if (radioTagId != 0)
+                {
+                    var stopRadio = new PlayerUpdatePacketRemoveEffectTagCompositeEffect
+                    {
+                        Guid = boomboxNpc.Guid,
+                        TagId = radioTagId,
+                    };
+
+                    foreach (var player in startingZone.Players)
+                        player.SendTunneled(stopRadio);
                 }
 
                 DespawnNpc(boomboxNpc, PoofEffectId);
@@ -194,6 +229,26 @@ public sealed class BoomboxAbility(AbilityServices services) : ConsumableAbility
                         player.SendTunneled(boomboxNpc.GetAddNpcPacket());
 
                     player.SendTunneled(songEffect);
+                }
+            }
+
+            if (radioTagId != 0 && newcomers.Count > 0)
+            {
+                var radioEffect = new PlayerUpdatePacketAddEffectTagCompositeEffect
+                {
+                    Guid = boomboxNpc.Guid,
+                    TagId = radioTagId,
+                    CompositeEffectId = radioEffectId,
+                    SourceGuid = boomboxNpc.Guid,
+                };
+
+                foreach (var player in newcomers)
+                {
+                    // The song block above already sent AddNpc when this boombox has one.
+                    if (songTagId == 0 && !boomboxNpc.VisiblePlayers.ContainsKey(player.Guid))
+                        player.SendTunneled(boomboxNpc.GetAddNpcPacket());
+
+                    player.SendTunneled(radioEffect);
                 }
             }
 

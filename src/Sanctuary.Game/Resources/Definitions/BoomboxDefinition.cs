@@ -7,4 +7,7 @@ public class BoomboxDefinition
     public int[] EffectIds { get; set; } = [];
     public int[] DanceSequence { get; set; } = [];
     public int TransformModelId { get; set; }
+
+    // CloverBoomboxSongs: sound effects to play instead of a song file that is missing.
+    public int[] SongEffectIds { get; set; } = [];
 }

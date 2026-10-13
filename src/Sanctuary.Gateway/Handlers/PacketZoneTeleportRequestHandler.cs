@@ -16,10 +16,12 @@ public static class PacketZoneTeleportRequestHandler
     private static ILogger _logger = null!;
     private static IResourceManager _resourceManager = null!;
 
-    // CloverPoiSpawnOffset tuning, in meters.
+    // CloverPoiSpawnOffset / CloverPoiDropOnTop tuning, in meters.
     private const float PoiClearance = 1.5f;
-    private const float PoiStepOut = 3.5f;
-    private const float PoiDropHeight = 1.5f;
+    private const float PoiDropHeight = 3.0f;
+
+    // Launch pads are flat, landing on them already works.
+    private const int LaunchPadIconId = 28411;
 
     public static void ConfigureServices(IServiceProvider serviceProvider)
     {
@@ -53,8 +55,10 @@ public static class PacketZoneTeleportRequestHandler
 
         // CloverPoiSpawnOffset: activity points (chess tables, cooking tables, launch pads...)
         // usually have no spawn spot of their own, so the player lands inside the object.
-        // Step out to the side of it and drop in from a little above, facing it.
-        if (pointOfInterest.NotificationType == global::Sanctuary.Packet.Common.PointOfInterestNotificationType.Local)
+        // CloverPoiDropOnTop: drop in from above the object rather than stepping out to the
+        // side, which could land players outside walls or off ledges.
+        if (pointOfInterest.NotificationType == global::Sanctuary.Packet.Common.PointOfInterestNotificationType.Local
+            && pointOfInterest.IconId != LaunchPadIconId)
         {
             var dx = position.X - pointOfInterest.Position.X;
             var dz = position.Z - pointOfInterest.Position.Z;
@@ -62,12 +66,10 @@ public static class PacketZoneTeleportRequestHandler
             if (dx * dx + dz * dz < PoiClearance * PoiClearance)
             {
                 position = new Vector4(
-                    pointOfInterest.Position.X + rotationZ * PoiStepOut,
+                    pointOfInterest.Position.X,
                     pointOfInterest.Position.Y + PoiDropHeight,
-                    pointOfInterest.Position.Z + rotationX * PoiStepOut,
+                    pointOfInterest.Position.Z,
                     position.W);
-
-                rotation = new Quaternion(-rotationZ, 0f, -rotationX, 0f);
             }
         }
 
