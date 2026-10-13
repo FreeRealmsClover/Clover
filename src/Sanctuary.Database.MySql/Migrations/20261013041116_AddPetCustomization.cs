@@ -10,12 +10,8 @@ namespace Sanctuary.Database.MySql.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<bool>(
-                name: "IsLead",
-                table: "Users",
-                type: "tinyint(1)",
-                nullable: false,
-                defaultValue: false);
+            // The live database already has IsLead (added by hand before this migration existed).
+            migrationBuilder.Sql("ALTER TABLE `Users` ADD COLUMN IF NOT EXISTS `IsLead` tinyint(1) NOT NULL DEFAULT 0;");
 
             migrationBuilder.AddColumn<string>(
                 name: "PetClothing",
