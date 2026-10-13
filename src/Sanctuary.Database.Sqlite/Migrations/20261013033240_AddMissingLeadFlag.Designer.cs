@@ -11,7 +11,7 @@ using Sanctuary.Database.Sqlite;
 namespace Sanctuary.Database.Sqlite.Migrations
 {
     [DbContext(typeof(SqliteDatabaseContext))]
-    [Migration("20261013033240_LocalPetTestModelSync")]
+    [Migration("20261013033240_AddMissingLeadFlag")]
     partial class AddMissingLeadFlag
     {
         /// <inheritdoc />
