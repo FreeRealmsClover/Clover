@@ -64,6 +64,10 @@ public class Npc : IScriptableNpc, IEntity
     public Action? UpdateEverySecondAction { get; set; }
 
     public int Animation { get; set; } = 1;
+    public int StandAnimId { get; set; }
+    public int WalkAnimId { get; set; }
+    public int RunAnimId { get; set; }
+    public Func<bool>? UpdateEveryTickAction { get; set; }
 
     public int CompositeEffectId { get; set; }
 
@@ -134,6 +138,9 @@ public class Npc : IScriptableNpc, IEntity
 
     public void UpdateEveryTick()
     {
+        if (UpdateEveryTickAction?.Invoke() == true)
+            return;
+
         if (!_scripts.IsEmpty)
             GetOrCreateScriptContext().FireEvent("tick");
 
@@ -156,6 +163,11 @@ public class Npc : IScriptableNpc, IEntity
 
     public void UpdatePosition(Vector4 position, Quaternion rotation, bool updateZoneArea = true)
     {
+        UpdatePosition(position, rotation, movementState: 1);
+    }
+
+    public void UpdatePosition(Vector4 position, Quaternion rotation, byte movementState)
+    {
         Position = position;
         Rotation = rotation;
 
@@ -169,7 +181,7 @@ public class Npc : IScriptableNpc, IEntity
             Guid = Guid,
             Position = position,
             Rotation = rotation,
-            State = 1,
+            State = movementState,
             Unknown = 0
         };
 
@@ -249,9 +261,9 @@ public class Npc : IScriptableNpc, IEntity
 
             InteractRange = InteractRange,
 
-            WalkAnimId = default, // Walk GroupAnimId
-            RunAnimId = default, // Sprint GroupAnimId
-            StandAnimId = default, // Idle GroupAnimId
+            WalkAnimId = WalkAnimId, // Walk GroupAnimId
+            RunAnimId = RunAnimId, // Sprint GroupAnimId
+            StandAnimId = StandAnimId, // Idle GroupAnimId
 
             Unknown33 = default,
             Unknown34 = default,
@@ -436,7 +448,7 @@ public class Npc : IScriptableNpc, IEntity
     {
         MoveTo(new Vector3(x, y, z), direct);
     }
-    
+
     #endregion
 
     public virtual void Dispose()

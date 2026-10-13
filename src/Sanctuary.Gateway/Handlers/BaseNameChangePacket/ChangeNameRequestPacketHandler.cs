@@ -62,6 +62,18 @@ public static class ChangeNameRequestPacketHandler
             return true;
         }
 
+        if (packet.Type == NameChangeType.Pet)
+        {
+            var pet = PetCustomizationService.Resolve(connection.Player, guid: packet.Guid);
+            nameChangeResponsePacket.Result = pet is not null &&
+                PetCustomizationService.Rename(connection.Player, pet, packet.Name.FullName)
+                ? ChangeNameResponse.Pending : ChangeNameResponse.Error;
+            _logger.LogDebug("Pet name-change request: guid={guid}, active={active}, resolved={resolved}, nameId={nameId}, textLength={length}, result={result}",
+                packet.Guid, connection.Player.ActivePetId, pet?.Id, packet.Name.FirstNameId, packet.Name.FullName.Length, nameChangeResponsePacket.Result);
+            connection.SendTunneled(nameChangeResponsePacket);
+            return true;
+        }
+
         if (connection.Player.Guid != packet.Guid)
         {
             _logger.LogError("Invalid player guid. {guid}", packet.Guid);

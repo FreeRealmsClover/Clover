@@ -6,6 +6,9 @@ namespace Sanctuary.Packet.Common;
 
 public class ClientItemDefinition : BaseItemDefinition
 {
+    // Catalog label used as the default name in the Pets panel. Not serialized on the wire.
+    public string? Comment { get; set; }
+
     public int ResellValue { get; set; }
 
     // ModelId

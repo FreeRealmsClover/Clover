@@ -16,6 +16,8 @@ public sealed class DbItemConfiguration : IEntityTypeConfiguration<DbItem>
         builder.Property(i => i.Tint).IsRequired();
         builder.Property(i => i.Count).IsRequired();
         builder.Property(i => i.Definition).IsRequired();
+        builder.Property(i => i.PetName).HasMaxLength(32);
+        builder.Property(i => i.PetClothing).HasMaxLength(256);
 
         builder.Property(i => i.Created).IsRequired().HasDefaultValueSql("DATE()");
     }

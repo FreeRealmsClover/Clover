@@ -50,6 +50,7 @@ public static class PacketTunneledClientWorldPacketHandler
             BaseFotomatPacket.OpCode => BaseFotomatPacketHandler.HandlePacket(connection, reader),
             WallOfDataBasePacket.OpCode => WallOfDataBasePacketHandler.HandlePacket(connection, reader),
             TakeMeThereRequestPacket.OpCode => TakeMeThereRequestPacketHandler.HandlePacket(connection, packet.Payload),
+            PetListPacket.BaseOpCode => PetListPacketHandler.HandlePacket(connection, reader),
             _ => false
         };
 

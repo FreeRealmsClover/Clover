@@ -76,6 +76,7 @@ public static class CoinStoreSellToClientRequestPacketHandler
 
         // TODO: Implement other item types
         if (clientItemDefinition.Type != 1 &&
+            clientItemDefinition.Type != 3 &&
             clientItemDefinition.Type != 12)
         {
             coinStoreTransactionCompletePacket.Result = 8;
@@ -125,7 +126,7 @@ public static class CoinStoreSellToClientRequestPacketHandler
             {
                 Character = x,
                 Item = x.Items.SingleOrDefault(i => i.Definition == clientItemDefinition.Id && i.Tint == tint),
-                NextId = x.Items.Max(i => i.Id)
+                NextId = x.Items.Select(i => (int?)i.Id).Max() ?? 0
             })
             .SingleOrDefault();
 

@@ -72,6 +72,7 @@ public static class PacketTunneledClientPacketHandler
             BaseUiPacket.OpCode => BaseUiPacketHandler.HandlePacket(connection, reader),
             ClientPathBasePacket.OpCode => ClientPathBasePacketHandler.HandlePacket(connection, reader),
             ClientLogoutOpCode => HandleClientLogout(connection),
+            PetListPacket.BaseOpCode => PetListPacketHandler.HandlePacket(connection, reader),
             _ => false
         };
 

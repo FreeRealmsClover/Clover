@@ -62,8 +62,13 @@ public static class CheckNamePacketHandler
         {
             NameChangeType.Character => OnCheckCharacterName(connection, packet),
             NameChangeType.Guild => OnCheckGuildName(connection, packet),
+            NameChangeType.Pet => PetCustomizationService.ValidateName(connection.Player, packet.Guid, packet.Name.FullName),
             _ => CheckNameResponse.Invalid
         };
+
+        if (packet.Type == NameChangeType.Pet)
+            _logger.LogDebug("Pet name-check: guid={guid}, active={active}, nameId={nameId}, textLength={length}, result={result}",
+                packet.Guid, connection.Player.ActivePetId, packet.Name.FirstNameId, packet.Name.FullName.Length, checkNameResponsePacket.Result);
 
         connection.SendTunneled(checkNameResponsePacket);
 

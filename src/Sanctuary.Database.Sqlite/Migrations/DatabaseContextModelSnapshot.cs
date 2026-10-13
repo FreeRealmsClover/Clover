@@ -322,6 +322,14 @@ namespace Sanctuary.Database.Sqlite.Migrations
                     b.Property<int>("Definition")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PetClothing")
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PetName")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("Tint")
                         .HasColumnType("INTEGER");
 
@@ -476,6 +484,9 @@ namespace Sanctuary.Database.Sqlite.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsLead")
+                        .HasColumnType("INTEGER");
 
                     b.Property<bool>("IsMember")
                         .ValueGeneratedOnAdd()

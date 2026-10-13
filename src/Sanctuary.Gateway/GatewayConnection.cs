@@ -89,6 +89,7 @@ public class GatewayConnection : UdpConnection
         RunTerminationStep("TradeManager.OnDisconnected", () => _serviceProvider.GetRequiredService<ITradeManager>().OnDisconnected(Player));
         RunTerminationStep("SendCharacterLogout", () => _loginClient.SendCharacterLogout(GuidHelper.GetPlayerId(Player.Guid)));
         RunTerminationStep(nameof(SavePlayerToDatabase), SavePlayerToDatabase);
+        RunTerminationStep("PetCompanionService.Dismiss", () => PetCompanionService.Dismiss(Player));
         RunTerminationStep("Player.Dispose", Player.Dispose);
 
         // Belt and braces: make sure the player is gone from the zone even if
@@ -366,6 +367,9 @@ public class GatewayConnection : UdpConnection
                 Definition = dbItem.Definition
             });
         }
+
+        PetPurchaseHelper.LoadPets(Player, _resourceManager);
+        PetCustomizationService.Load(Player, dbCharacter.Items);
 
         Player.Gender = dbCharacter.Gender;
 

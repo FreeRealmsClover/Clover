@@ -144,6 +144,7 @@ public static class PacketInGamePurchasePlaceOrderPacketHandler
         var lastMountId = dbCharacter.Mounts.Count > 0 ? dbCharacter.Mounts.Max(x => x.Id) : 0;
 
         var pendingUpdates = new List<Action>();
+        var purchasedPet = false;
 
         foreach (var bundleEntry in appStoreBundleDefinition.Entries)
         {
@@ -156,11 +157,22 @@ public static class PacketInGamePurchasePlaceOrderPacketHandler
                 return true;
             }
 
-            if (clientItemDefinition.Type == 1 || clientItemDefinition.Type == 12 || clientItemDefinition.Type == 27)
+            if (clientItemDefinition.Type == 1 || clientItemDefinition.Type == 2 || clientItemDefinition.Type == 3 || clientItemDefinition.Type == 12 || clientItemDefinition.Type == 27)
             {
-                var totalQuantity = orderDetail.Quantity * bundleEntry.Quantity;
+                var isPet = clientItemDefinition.Type == 2;
+                if (isPet && (!PetPurchaseHelper.IsSupported(clientItemDefinition) || bundleEntry.Quantity <= 0 ||
+                    (long)orderDetail.Quantity * bundleEntry.Quantity != 1 ||
+                    dbCharacter.Items.Any(item => item.Definition == clientItemDefinition.Id && item.Tint == orderDetailTint)))
+                {
+                    packetInGamePurchasePlaceOrderResponse.Result = 2;
+                    connection.SendTunneled(packetInGamePurchasePlaceOrderResponse);
+                    return true;
+                }
 
-                var dbItem = dbCharacter.Items.SingleOrDefault(i =>
+                var totalQuantity = orderDetail.Quantity * bundleEntry.Quantity;
+                purchasedPet |= isPet;
+
+                var dbItem = isPet ? null : dbCharacter.Items.SingleOrDefault(i =>
                     i.Definition == clientItemDefinition.Id && i.Tint == orderDetailTint);
 
                 if (dbItem is not null)
@@ -186,7 +198,7 @@ public static class PacketInGamePurchasePlaceOrderPacketHandler
 
                 pendingUpdates.Add(() =>
                 {
-                    var clientItem = connection.Player.Items.SingleOrDefault(x => x.Definition == itemDefinition.Id && x.Tint == orderDetailTint);
+                    var clientItem = connection.Player.Items.SingleOrDefault(x => x.Id == savedItem.Id);
 
                     var addItem = false;
 
@@ -321,6 +333,12 @@ public static class PacketInGamePurchasePlaceOrderPacketHandler
 
         foreach (var pendingUpdate in pendingUpdates)
             pendingUpdate();
+
+        if (purchasedPet)
+        {
+            PetPurchaseHelper.LoadPets(connection.Player, _resourceManager);
+            PetCompanionService.SendActiveState(connection.Player);
+        }
 
         global::Sanctuary.Game.Eye.Log("shop-buy", connection.Player, new
         {

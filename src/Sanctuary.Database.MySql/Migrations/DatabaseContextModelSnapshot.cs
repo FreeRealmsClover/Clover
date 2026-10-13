@@ -331,6 +331,14 @@ namespace Sanctuary.Database.MySql.Migrations
                     b.Property<int>("Definition")
                         .HasColumnType("int");
 
+                    b.Property<string>("PetClothing")
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("PetName")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
                     b.Property<int>("Tint")
                         .HasColumnType("int");
 
@@ -489,6 +497,9 @@ namespace Sanctuary.Database.MySql.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
+
+                    b.Property<bool>("IsLead")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsMember")
                         .ValueGeneratedOnAdd()

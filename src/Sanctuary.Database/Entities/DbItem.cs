@@ -11,6 +11,9 @@ public class DbItem
     public int Count { get; set; }
     public int Definition { get; set; }
 
+    public string? PetName { get; set; }
+    public string? PetClothing { get; set; }
+
     public DateTimeOffset Created { get; set; } = DateTimeOffset.UtcNow;
 
     public ICollection<DbProfile> Profiles { get; set; } = new HashSet<DbProfile>();
