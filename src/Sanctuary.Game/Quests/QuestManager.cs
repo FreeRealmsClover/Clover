@@ -56,6 +56,37 @@ public sealed class QuestManager : IQuestManager
         var options = new List<NpcInteractionOption>();
         var quests = _resourceManager.Quests;
 
+        // CloverQuestRecovery: every objective is done but the turn-in was never answered
+        // (restart, relog, disconnect). Let the player hand it in again at the final npc.
+        foreach (var (questId, completed) in player.Quests)
+        {
+            if (completed || !quests.TryGet(questId, out var readyQuest) || readyQuest.Goals.Count == 0)
+                continue;
+
+            var progress = player.QuestGoalProgress.TryGetValue(questId, out var p) ? p : 0;
+
+            if (progress < readyQuest.Goals.Count)
+                continue;
+
+            if (GoalTargetGuid(readyQuest, readyQuest.Goals.Count - 1) != npc.Guid && readyQuest.TargetGuid != npc.Guid)
+                continue;
+
+            var quest = readyQuest;
+
+            options.Add(new NpcInteractionOption
+            {
+                IconId = ContextIcons.QuestTurnIn,
+                ButtonTextId = quest.TitleId,
+                Invoke = interactingPlayer =>
+                {
+                    // Any queued turn-in answer is stale by now; start clean so the next
+                    // answer completes this quest.
+                    interactingPlayer.PendingQuestEndActions.Clear();
+                    TurnIn(interactingPlayer, quest);
+                }
+            });
+        }
+
         foreach (var (questId, completed) in player.Quests)
         {
             if (completed || !quests.TryGet(questId, out var activeQuest))
@@ -131,7 +162,17 @@ public sealed class QuestManager : IQuestManager
         // not ported yet. Options are built turn-ins first, which is what a player walking up
         // to an npc expects.
         if (options.Count > 0)
+        {
             options[0].Invoke(player);
+            return;
+        }
+
+        // CloverQuestRecovery: nothing quest related to do with this npc right now. Run its
+        // normal interaction, or close the client side interaction so it can be clicked again.
+        if (npc.InteractAction is not null)
+            npc.OnInteract(player);
+        else
+            player.SendTunneled(new CommandPacketEndDialog());
     }
 
     private const int CollectPickupEffect = 5386;
